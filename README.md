@@ -3,10 +3,11 @@
 ## Build Status
 
 
-4.3.4 (master)
-:------------:
-[![CircleCI Status](https://circleci.com/gh/The-Cataclysm-Preservation-Project/TrinityCore.svg?style=shield&branch=master)](https://app.circleci.com/pipelines/github/The-Cataclysm-Preservation-Project/TrinityCore?branch=master)
-[![AppVeyor Status](https://ci.appveyor.com/api/projects/status/github/The-Cataclysm-Preservation-Project/TrinityCore?branch=master&svg=true)](https://ci.appveyor.com/project/Ovahlord/trinitycore)
+4.3.4 (master) |
+:------------: |
+[![AppVeyor Status](https://ci.appveyor.com/api/projects/status/github/The-Cataclysm-Preservation-Project/TrinityCore?branch=master&svg=true)](https://ci.appveyor.com/project/Ovahlord/trinitycore) |
+[![master GCC Build status](https://github.com/The-Cataclysm-Preservation-Project/TrinityCore/actions/workflows/gcc-build.yml/badge.svg?branch=master&event=push)](https://github.com/The-Cataclysm-Preservation-Project/TrinityCore/actions?query=workflow%3AGCC+branch%3Amaster+event%3Apush) |
+[![master clang Build status](https://github.com/The-Cataclysm-Preservation-Project/TrinityCore/actions/workflows/clang-build.yml/badge.svg?branch=master&event=push)](https://github.com/The-Cataclysm-Preservation-Project/TrinityCore/actions?query=workflow%3ACLANG+branch%3Amaster+event%3Apush) |
 
 ## Introduction
 
