@@ -318,9 +318,9 @@ void Creature::AddToWorld()
             GetVehicleKit()->Install();
 
         // If the creature has been summoned, register it for the summoner
-        if (IsSummon())
-            if (Unit* summoner = GetSummonInfo()->GetUnitSummoner())
-                summoner->RegisterSummon(GetSummonInfo());
+        if (SummonInfo* summonInfo = GetSummonInfo())
+            if (Unit* summoner = summonInfo->GetUnitSummoner())
+                summoner->RegisterSummon(summonInfo);
 
         if (GetZoneScript())
             GetZoneScript()->OnCreatureCreate(this);
@@ -332,9 +332,9 @@ void Creature::RemoveFromWorld()
     if (IsInWorld())
     {
         // If the creature about to despawn, unregister it for the summoner
-        if (IsSummon())
-            if (Unit* summoner = GetSummonInfo()->GetUnitSummoner())
-                summoner->UnregisterSummon(GetSummonInfo());
+        if (SummonInfo* summonInfo = GetSummonInfo())
+            if (Unit* summoner = summonInfo->GetUnitSummoner())
+                summoner->UnregisterSummon(summonInfo);
 
         if (GetZoneScript())
             GetZoneScript()->OnCreatureRemove(this);

@@ -82,6 +82,7 @@
 #include "SummonInfo.h"
 #include "TemporarySummon.h"
 #include "Totem.h"
+#include "TotemPackets.h"
 #include "Transport.h"
 #include "UnitAI.h"
 #include "UpdateFieldFlags.h"
@@ -379,6 +380,8 @@ Unit::Unit(bool isWorldObject) :
 
     _oldFactionId = 0;
     _isWalkingBeforeCharm = false;
+
+    _slottedSummons.resize(AsUnderlyingType(SummonPropertiesSlot::Max), nullptr);
 }
 
 ////////////////////////////////////////////////////////////
@@ -8824,8 +8827,57 @@ void Unit::RegisterSummon(SummonInfo* summon)
     if (!summon)
         return;
 
-    if (!advstd::ranges::contains(_activeSummons, summon))
-        _activeSummons.push_back(summon);
+    SummonPropertiesSlot slot = summon->GetSummonSlot();
+
+    // Wild Summons usually don't need any tracking but some do have certain SummonPropertiesFlags which
+    // causes them to interact with the summoner in some way (e.g. despawning when the summoner died)
+    if (slot == SummonPropertiesSlot::None)
+    {
+        if (advstd::ranges::contains(_wildSummons, summon))
+            return;
+
+        _wildSummons.push_back(summon);
+        return;
+    }
+
+    // Select any available totem slot if empty, otherwise they just replace the oldest summon of the same entry
+    if (slot == SummonPropertiesSlot::AnyAvailableTotem)
+    {
+        // @Todo
+        slot = SummonPropertiesSlot::Totem1;
+    }
+
+    uint8 targetSlot = AsUnderlyingType(slot);
+
+    // Another is occupying the slot. Unsummon that summon first
+    if (SummonInfo* activeSummon = _slottedSummons[targetSlot])
+        activeSummon->GetSummonedCreature()->DespawnOrUnsummon();
+
+    _slottedSummons[targetSlot] = summon;
+
+    switch (slot)
+    {
+        case SummonPropertiesSlot::Totem1:
+        case SummonPropertiesSlot::Totem2:
+        case SummonPropertiesSlot::Totem3:
+        case SummonPropertiesSlot::Totem4:
+        {
+            Creature const* summonedCreature = summon->GetSummonedCreature();
+            if (Player* playerSummoner = Object::ToPlayer(summon->GetUnitSummoner()))
+            {
+                WorldPackets::Totem::TotemCreated totemCreated;
+                totemCreated.Totem = summonedCreature->GetGUID();
+                totemCreated.SpellID = summonedCreature->GetUInt32Value(UNIT_CREATED_BY_SPELL);
+                totemCreated.Duration = summon->GetRemainingDuration().value_or(0ms).count();
+                totemCreated.Slot = AsUnderlyingType(summon->GetSummonSlot()) - 1;
+
+                playerSummoner->SendDirectMessage(totemCreated.Write());
+            }
+            break;
+        }
+        default:
+            break;
+    }
 }
 
 void Unit::UnregisterSummon(SummonInfo* summon)
@@ -8833,7 +8885,15 @@ void Unit::UnregisterSummon(SummonInfo* summon)
     if (!summon)
         return;
 
-    std::erase(_activeSummons, summon);
+    SummonPropertiesSlot slot = summon->GetSummonSlot();
+    if (slot == SummonPropertiesSlot::None)
+    {
+        std::erase(_wildSummons, summon);
+        return;
+    }
+
+    uint8 targetSlot = AsUnderlyingType(slot);
+    _slottedSummons[targetSlot] = nullptr;
 }
 
 void Unit::SetShapeshiftForm(ShapeshiftForm form)
@@ -9626,7 +9686,8 @@ void Unit::RemoveFromWorld()
         }
 
         // Clear all active summon references. If we are about to switch map instances, we want to make sure that we leave all summons behind so we won't do threadunsafe operations
-        _activeSummons.clear();
+        _wildSummons.clear();
+        _slottedSummons.clear();
 
         WorldObject::RemoveFromWorld();
         m_duringRemoveFromWorld = false;

@@ -158,3 +158,8 @@ bool SummonInfo::IsControlledBySummoner() const
 {
     return _control > SummonPropertiesControl::None;
 }
+
+SummonPropertiesSlot SummonInfo::GetSummonSlot() const
+{
+    return _summonSlot;
+}

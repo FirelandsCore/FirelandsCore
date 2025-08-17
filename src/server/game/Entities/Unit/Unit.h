@@ -1826,7 +1826,9 @@ class TC_GAME_API Unit : public WorldObject
 
         /* Player Movement fields END*/
 
-        std::vector<SummonInfo*> _activeSummons;
+        // SummonInfo slot handling
+        std::vector<SummonInfo*> _wildSummons;
+        std::vector<SummonInfo*> _slottedSummons;
 };
 
 namespace Trinity

@@ -77,6 +77,8 @@ public:
     void SetUseSummonerFaction(bool set);
     // Returns true when the summon is either a Guardian, Pet, Vehicle or Possessed summon
     bool IsControlledBySummoner() const;
+    // Returns the summon slot that the summon is going to be stored in
+    SummonPropertiesSlot GetSummonSlot() const;
 
 private:
     Creature* _summonedCreature;
