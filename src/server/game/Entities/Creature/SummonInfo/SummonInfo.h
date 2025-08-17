@@ -18,8 +18,10 @@
 #ifndef _SummonInfo_h__
 #define _SummonInfo_h__
 
+#include "DBCEnums.h"
 #include "Define.h"
 #include "Duration.h"
+#include "EnumFlag.h"
 #include "ObjectGuid.h"
 #include "Optional.h"
 
@@ -40,10 +42,10 @@ public:
     explicit SummonInfo(Creature* summonedCreature, SummonInfoArgs const& args);
 
     // Initializes additional settings based on the provided SummonProperties ID.
-    void InitializeSummonProperties(uint32 summonPropertiesId);
+    void InitializeSummonProperties(uint32 summonPropertiesId, Unit const* summoner);
     // Returns the creature that is tied to this SummonInfo instance.
     Creature* GetSummonedCreature() const;
-    // Returns the Unit summoner, or nullptr if no summoner has been provided or if the summoner is not a Unit.
+    // Returns the Unit summoner, or nullptr if no summoner has been provided or if the summoner is not an Unit.
     Unit* GetUnitSummoner() const;
     // Returns the GameObject summoner, or nullptr if no summoner has been provided or if the summoner is not a GameObject.
     GameObject* GetGameObjectSummoner() const;
@@ -52,10 +54,10 @@ public:
     Optional<Milliseconds> GetRemainingDuration() const;
     // Returns the health amount that will override the default max health calculation. Nullopt when no amount is provided.
     Optional<uint64> GetMaxHealth() const;
-    // Returns the ID of the spell that has been used to summon the creature. Nullopt when the creature has not been summoned by a spell (scripted summons/ other APIs).
-    Optional<uint32> GetSummonSpellId() const;
     // Returns the FactionTemplate ID of the summon that is overriding the default ID of the creature. Nullopt when the faction has not been overriden.
     Optional<uint32> GetFactionId() const;
+    // Returns the level of the creature that will override the default level calculation. Nullopt when the creature uses its default values.
+    Optional<uint8> GetCreatureLevel() const;
 
     // Returns true when the summon will despawn when the summoner logs out. This also includes despawning and teleporting between map instances.
     bool DespawnsOnSummonerLogout() const;
@@ -69,17 +71,23 @@ public:
     bool DespawnsWhenExpired() const;
     // Marks the summon to despawn after its duration has expired. If disabled, the summon will just die.
     void SetDespawnWhenExpired(bool set);
+    // Returns true when the summon will inherit its summoner's faction.
+    bool UsesSummonerFaction() const;
+    // Marks the summon to inherit its summoner's faction.
+    void SetUseSummonerFaction(bool set);
+    // Returns true when the summon is either a Guardian, Pet, Vehicle or Possessed summon
+    bool IsControlledBySummoner() const;
 
 private:
     Creature* _summonedCreature;
-    Optional<ObjectGuid> _summonerGUID;
+    ObjectGuid _summonerGUID;
     Optional<Milliseconds> _remainingDuration;  // NYI
-    Optional<uint64> _maxHealth;                // NYI
-    Optional<uint32> _summonSpellId;            // NYI
-    Optional<uint32> _factionId;                // NYI
-    bool _despawnOnSummonerLogout;              // NYI
-    bool _despawnOnSummonerDeath;               // NYI
-    bool _despawnWhenExpired;                   // NYI
+    Optional<uint64> _maxHealth;                // Implemented in Creature::UpdateLevelDependantStats
+    Optional<uint32> _factionId;                // Implemented in Creature::UpdateEntry
+    Optional<uint8> _creatureLevel;             // Implemented in Creature::SelectLevel
+    EnumFlag<SummonPropertiesFlags> _flags;
+    SummonPropertiesControl _control;
+    SummonPropertiesSlot _summonSlot;
 };
 
 #endif // _SummonInfo_h__

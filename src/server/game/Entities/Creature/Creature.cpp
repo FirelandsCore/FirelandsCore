@@ -596,7 +596,10 @@ bool Creature::UpdateEntry(uint32 entry, CreatureData const* data /*= nullptr*/,
     if (!GetCreatureAddon())
         SetSheath(SHEATH_STATE_MELEE);
 
-    SetFaction(cInfo->faction);
+    if (SummonInfo const* summonInfo = GetSummonInfo())
+        SetFaction(summonInfo->GetFactionId().value_or(cInfo->faction));
+    else
+        SetFaction(cInfo->faction);
 
     uint32 npcflags = 0, unitFlags = 0, unitFlags2 = 0;
     ObjectMgr::ChooseCreatureFlags(cInfo, &npcflags, &unitFlags, &unitFlags2, _staticFlags, data);
@@ -1414,12 +1417,22 @@ void Creature::SaveToDB(uint32 mapid, uint8 spawnMask)
 
 void Creature::SelectLevel()
 {
-    CreatureTemplate const* cInfo = GetCreatureTemplate();
+    uint8 level = [&]() -> uint8
+    {
+        // Some summons override their default level selection
+        if (SummonInfo const* summonInfo = GetSummonInfo())
+            if (summonInfo->GetCreatureLevel().has_value())
+                return *summonInfo->GetCreatureLevel();
 
-    // level
-    uint8 minlevel = std::min(cInfo->maxlevel, cInfo->minlevel);
-    uint8 maxlevel = std::max(cInfo->maxlevel, cInfo->minlevel);
-    uint8 level = minlevel == maxlevel ? minlevel : urand(minlevel, maxlevel);
+        CreatureTemplate const* cInfo = GetCreatureTemplate();
+
+        // level
+        uint8 minlevel = std::min(cInfo->maxlevel, cInfo->minlevel);
+        uint8 maxlevel = std::max(cInfo->maxlevel, cInfo->minlevel);
+
+        return minlevel == maxlevel ? minlevel : urand(minlevel, maxlevel);
+    }();
+
     SetLevel(level);
 }
 
@@ -1430,10 +1443,17 @@ void Creature::UpdateLevelDependantStats()
     CreatureBaseStats const* stats = sObjectMgr->GetCreatureBaseStats(getLevel(), cInfo->unit_class);
 
     // health
-    float healthmod = _GetHealthMod(rank);
+    uint32 health = [&]() -> uint32
+    {
+        // Some summons have their maximum health overridden by their summon spell effect values (e.g. player Shaman totems)
+        if (SummonInfo const* summonInfo = GetSummonInfo())
+            if (summonInfo->GetMaxHealth().has_value())
+                return *_summonInfo->GetMaxHealth();
 
-    uint32 basehp = stats->GenerateHealth(cInfo);
-    uint32 health = uint32(basehp * healthmod);
+        float healthmod = _GetHealthMod(rank);
+        uint32 basehp = stats->GenerateHealth(cInfo);
+        return uint32(basehp * healthmod);
+    }();
 
     SetCreateHealth(health);
     SetMaxHealth(health);

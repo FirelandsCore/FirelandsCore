@@ -2010,7 +2010,7 @@ void Spell::EffectSummonType(SpellEffIndex effIndex)
     SummonCreatureExtraArgs extraArgs;
     extraArgs.SummonProperties = properties;
     extraArgs.SummonDuration = duration;
-    extraArgs.Summoner = caster->IsUnit() ? caster->ToUnit() : nullptr;
+    extraArgs.Summoner = Object::ToUnit(caster);
     extraArgs.SummonSpellId = m_spellInfo->Id;
     extraArgs.PrivateObjectOwner = privateObjectOwner;
 
@@ -2077,7 +2077,6 @@ void Spell::EffectSummonType(SpellEffIndex effIndex)
                     caster->CastSpell(summon, VEHICLE_SPELL_RIDE_HARDCODED, CastSpellExtraArgs(true).AddSpellBP0(extraArgs.SeatNumber));
                 else if (extraArgs.RideSpell)
                     caster->CastSpell(summon, extraArgs.RideSpell, true);
-
             }
         }
     }

@@ -2076,6 +2076,22 @@ TempSummon* Map::SummonCreature(uint32 entry, Position const& pos, SummonCreatur
             break;
     }
 
+    // Store special settings which have been extracted from spell effects/scripts
+    SummonInfoArgs args;
+    if (summonArgs.Summoner)
+        args.Summoner = summonArgs.Summoner;
+    if (summonArgs.SummonProperties)
+        args.SummonPropertiesId = summonArgs.SummonProperties->ID;
+    if (summonArgs.SummonDuration)
+        args.Duration = Milliseconds(summonArgs.SummonDuration);
+    if (summonArgs.CreatureLevel > 0)
+        args.CreatureLevel = summonArgs.CreatureLevel;
+    if (summonArgs.SummonHealth)
+        args.MaxHealth = summonArgs.SummonHealth;
+
+    // Initialize the SummonInfo API which marks the creature as Summon
+    summon->InitializeSummonInfo(args);
+
     // Create creature entity
     if (!summon->Create(GenerateLowGuid<HighGuid::Unit>(), this, entry, pos, nullptr, summonArgs.VehicleRecID, true))
     {
@@ -2087,21 +2103,7 @@ TempSummon* Map::SummonCreature(uint32 entry, Position const& pos, SummonCreatur
     if (summonArgs.Summoner)
         PhasingHandler::InheritPhaseShift(summon, summonArgs.Summoner);
 
-    // Store special settings which have been extracted from spell effects/scripts
-    SummonInfoArgs args;
-    if (summonArgs.Summoner)
-        args.SummonerGUID = summonArgs.Summoner->GetGUID();
-    if (summonArgs.SummonProperties)
-        args.SummonPropertiesId = summonArgs.SummonProperties->ID;
-    if (summonArgs.SummonDuration)
-        args.Duration = Milliseconds(summonArgs.SummonDuration);
-    if (summonArgs.SummonSpellId)
-        args.SummonSpellId = summonArgs.SummonSpellId;
-    if (summonArgs.SummonHealth)
-        args.MaxHealth = summonArgs.SummonHealth;
-
-    // Initialize the SummonInfo API which marks the creature as Summon
-    summon->InitializeSummonInfo(args);
+    summon->SetUInt32Value(UNIT_CREATED_BY_SPELL, summonArgs.SummonSpellId);
 
     TransportBase* transport = summonArgs.Summoner ? summonArgs.Summoner->GetTransport() : nullptr;
     if (transport)
@@ -2115,22 +2117,9 @@ TempSummon* Map::SummonCreature(uint32 entry, Position const& pos, SummonCreatur
         transport->AddPassenger(summon);
     }
 
-    // Initialize tempsummon fields
-    summon->SetUInt32Value(UNIT_CREATED_BY_SPELL, summonArgs.SummonSpellId);
     summon->SetHomePosition(pos);
     summon->InitStats(summonArgs.SummonDuration);
     summon->SetPrivateObjectOwner(summonArgs.PrivateObjectOwner);
-
-    // Handle health argument
-    if (summonArgs.SummonHealth)
-    {
-        summon->SetMaxHealth(summonArgs.SummonHealth);
-        summon->SetHealth(summonArgs.SummonHealth);
-    }
-
-    // Handle creature level argument
-    if (summonArgs.CreatureLevel)
-        summon->SetLevel(summonArgs.CreatureLevel);
 
     if (!AddToMap(summon->ToCreature()))
     {

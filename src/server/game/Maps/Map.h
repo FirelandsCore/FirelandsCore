@@ -144,7 +144,7 @@ inline bool CompareRespawnInfo::operator()(RespawnInfo const* a, RespawnInfo con
 struct TC_GAME_API SummonCreatureExtraArgs
 {
 public:
-    SummonCreatureExtraArgs() { }
+    SummonCreatureExtraArgs() = default;
 
     SummonCreatureExtraArgs& SetSummonDuration(uint32 duration) { SummonDuration = duration; return *this; }
 

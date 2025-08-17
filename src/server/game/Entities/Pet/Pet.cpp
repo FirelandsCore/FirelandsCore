@@ -41,11 +41,15 @@ constexpr float PET_XP_FACTOR = 0.05f;
 Pet::Pet(Player* owner, PetType type) :
     Guardian(nullptr, owner, true), m_usedTalentCount(0), m_removed(false),
     m_petType(type), m_duration(0), m_auraRaidUpdateMask(0), m_loading(false),
-    m_declinedname(nullptr)
+    m_declinedname(nullptr), m_petSlot(0)
 {
     ASSERT(GetOwner());
 
-    InitializeSummonInfo({ .SummonerGUID = GetOwner()->GetGUID()});
+    InitializeSummonInfo(
+    {
+        .Summoner = GetOwner(),
+        .CreatureLevel = GetOwner()->getLevel()
+    });
 
     m_unitTypeMask |= UNIT_MASK_PET;
     if (type == HUNTER_PET)

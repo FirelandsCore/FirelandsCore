@@ -21,16 +21,17 @@
 #include "Define.h"
 #include "Duration.h"
 #include "Optional.h"
-#include "ObjectGuid.h"
+
+class WorldObject;
 
 // Controls the behavior of a summoned creature and must be set with extreme care. If you want a blank summon that just exists as a permanent spawn, leave all fields untouched.
 struct SummonInfoArgs
 {
-    Optional<ObjectGuid> SummonerGUID;
+    WorldObject const* Summoner = nullptr;
     Optional<uint64> MaxHealth;
     Optional<Milliseconds> Duration;
     Optional<uint32> SummonPropertiesId;
-    Optional<uint32> SummonSpellId;
+    Optional<uint8> CreatureLevel;
 };
 
 #endif // _SummonInfoArgs_h__

@@ -172,8 +172,6 @@ void TempSummon::InitStats(uint32 duration)
 
     if (owner && IsTrigger() && m_spells[0])
     {
-        SetFaction(owner->GetFaction());
-        SetLevel(owner->getLevel());
         if (owner->GetTypeId() == TYPEID_PLAYER)
             m_ControlledByPlayer = true;
     }
@@ -197,9 +195,6 @@ void TempSummon::InitStats(uint32 duration)
 
         if (m_Properties->Control != SUMMON_CATEGORY_WILD)
         {
-            if (!m_Properties->Faction)
-                SetFaction(owner->GetFaction());
-
             // Creator guid is always set for allied summons
             SetCreatorGUID(owner->GetGUID());
 
@@ -218,10 +213,6 @@ void TempSummon::InitStats(uint32 duration)
         if (owner->IsTotem())
             owner->m_Controlled.insert(this);
     }
-
-    // If property has a faction defined, use it.
-    if (m_Properties->Faction)
-        SetFaction(m_Properties->Faction);
 }
 
 void TempSummon::InitSummon()
@@ -393,7 +384,7 @@ void Guardian::InitStats(uint32 duration)
 {
     Minion::InitStats(duration);
 
-    InitStatsForLevel(GetOwner()->getLevel());
+    InitStatsForLevel(getLevel());
 
     if (GetOwner()->GetTypeId() == TYPEID_PLAYER && HasUnitTypeMask(UNIT_MASK_CONTROLABLE_GUARDIAN))
         m_charmInfo->InitCharmCreateSpells();
@@ -423,7 +414,6 @@ Puppet::Puppet(SummonPropertiesEntry const* properties, Unit* owner)
 void Puppet::InitStats(uint32 duration)
 {
     Minion::InitStats(duration);
-    SetLevel(GetOwner()->getLevel());
     SetReactState(REACT_PASSIVE);
 }
 
