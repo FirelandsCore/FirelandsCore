@@ -189,9 +189,6 @@ void TempSummon::InitStats(uint32 duration)
 
         if (m_Properties->Control != SUMMON_CATEGORY_WILD)
         {
-            // Creator guid is always set for allied summons
-            SetCreatorGUID(owner->GetGUID());
-
             // Summons inherit their player summoner's guild data
             if (owner && (owner->IsPlayer() || owner->IsTotem()))
             {

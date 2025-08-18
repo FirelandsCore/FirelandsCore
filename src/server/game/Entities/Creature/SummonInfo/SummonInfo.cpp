@@ -154,6 +154,7 @@ void SummonInfo::SetUseSummonerFaction(bool set)
     else
         _flags.RemoveFlag(SummonPropertiesFlags::UseSummonerFaction);
 }
+
 bool SummonInfo::IsControlledBySummoner() const
 {
     return _control > SummonPropertiesControl::None;

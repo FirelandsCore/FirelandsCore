@@ -430,6 +430,9 @@ class TC_GAME_API Creature : public Unit, public GridObject<Creature>, public Ma
 
         bool IsSummon() const override;
 
+        // Handles all summon relation actions, such as setting guid values, casting passives and initializing the control status
+        void HandlePostSummonActions();
+
     protected:
         bool CreateFromProto(ObjectGuid::LowType guidlow, uint32 entry, CreatureData const* data = nullptr, uint32 vehId = 0);
         bool InitEntry(uint32 entry, CreatureData const* data = nullptr);

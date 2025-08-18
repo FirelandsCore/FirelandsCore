@@ -82,7 +82,6 @@
 #include "SummonInfo.h"
 #include "TemporarySummon.h"
 #include "Totem.h"
-#include "TotemPackets.h"
 #include "Transport.h"
 #include "UnitAI.h"
 #include "UpdateFieldFlags.h"
@@ -5727,6 +5726,16 @@ void Unit::SetOwnerGUID(ObjectGuid owner)
     RemoveFieldNotifyFlag(UF_FLAG_OWNER);
 }
 
+Unit* Unit::GetCreator() const
+{
+    return ObjectAccessor::GetUnit(*this, GetCreatorGUID());
+}
+
+Creature* Unit::GetCritter() const
+{
+    return ObjectAccessor::GetCreature(*this, GetCritterGUID());
+}
+
 Player* Unit::GetControllingPlayer() const
 {
     if (ObjectGuid guid = GetCharmerOrOwnerGUID())
@@ -8840,44 +8849,13 @@ void Unit::RegisterSummon(SummonInfo* summon)
         return;
     }
 
-    // Select any available totem slot if empty, otherwise they just replace the oldest summon of the same entry
-    if (slot == SummonPropertiesSlot::AnyAvailableTotem)
-    {
-        // @Todo
-        slot = SummonPropertiesSlot::Totem1;
-    }
-
     uint8 targetSlot = AsUnderlyingType(slot);
 
-    // Another is occupying the slot. Unsummon that summon first
+    // Another summon is occupying the slot. Unsummon that one first
     if (SummonInfo* activeSummon = _slottedSummons[targetSlot])
         activeSummon->GetSummonedCreature()->DespawnOrUnsummon();
 
     _slottedSummons[targetSlot] = summon;
-
-    switch (slot)
-    {
-        case SummonPropertiesSlot::Totem1:
-        case SummonPropertiesSlot::Totem2:
-        case SummonPropertiesSlot::Totem3:
-        case SummonPropertiesSlot::Totem4:
-        {
-            Creature const* summonedCreature = summon->GetSummonedCreature();
-            if (Player* playerSummoner = Object::ToPlayer(summon->GetUnitSummoner()))
-            {
-                WorldPackets::Totem::TotemCreated totemCreated;
-                totemCreated.Totem = summonedCreature->GetGUID();
-                totemCreated.SpellID = summonedCreature->GetUInt32Value(UNIT_CREATED_BY_SPELL);
-                totemCreated.Duration = summon->GetRemainingDuration().value_or(0ms).count();
-                totemCreated.Slot = AsUnderlyingType(summon->GetSummonSlot()) - 1;
-
-                playerSummoner->SendDirectMessage(totemCreated.Write());
-            }
-            break;
-        }
-        default:
-            break;
-    }
 }
 
 void Unit::UnregisterSummon(SummonInfo* summon)
