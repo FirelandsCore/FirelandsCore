@@ -15,12 +15,11 @@
  * with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "WorldSession.h"
 #include "Archaeology.h"
 #include "Common.h"
 #include "Config.h"
-#include "DatabaseEnv.h"
 #include "DBCStores.h"
+#include "DatabaseEnv.h"
 #include "GameClient.h"
 #include "GameObject.h"
 #include "GameObjectAI.h"
@@ -39,10 +38,12 @@
 #include "SpellCastRequest.h"
 #include "SpellMgr.h"
 #include "SpellPackets.h"
+#include "SummonInfo.h"
 #include "Totem.h"
 #include "TotemPackets.h"
 #include "World.h"
 #include "WorldPacket.h"
+#include "WorldSession.h"
 
 void WorldSession::HandleClientCastFlags(WorldPacket& recvPacket, uint8 castFlags, SpellCastTargets& targets)
 {
@@ -423,15 +424,15 @@ void WorldSession::HandleTotemDestroyed(WorldPackets::Totem::TotemDestroyed& pac
     if (_player->IsCharming())
         return;
 
-    if (packet.Slot +1 >= MAX_TOTEM_SLOT)
+    SummonPropertiesSlot slot = static_cast<SummonPropertiesSlot>(packet.Slot + 1);
+    if (slot < SummonPropertiesSlot::Totem1 || slot > SummonPropertiesSlot::Totem4)
         return;
 
-    if (!_player->m_SummonSlot[packet.Slot + 1])
+    SummonInfo* summonInfo = _player->GetSummonInSlot(slot);
+    if (!summonInfo)
         return;
 
-    Creature* totem = ObjectAccessor::GetCreature(*GetPlayer(), _player->m_SummonSlot[packet.Slot + 1]);
-    if (totem && totem->IsTotem() && totem->GetGUID() == packet.TotemGUID)
-        totem->ToTotem()->UnSummon();
+    summonInfo->GetSummonedCreature()->DespawnOrUnsummon();
 }
 
 void WorldSession::HandleSelfResOpcode(WorldPacket& /*recvData*/)
