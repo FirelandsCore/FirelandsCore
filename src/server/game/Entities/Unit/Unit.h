@@ -103,6 +103,8 @@ enum ProcFlagsSpellType : uint32;
 enum ZLiquidStatus : uint32;
 enum CharmType : uint8;
 
+enum class SummonPropertiesSlot: int8;
+
 namespace Movement
 {
     class ExtraMovementStatusElement;
@@ -1335,6 +1337,13 @@ class TC_GAME_API Unit : public WorldObject
         void RegisterSummon(SummonInfo* summon);
         // Unregisters the SummonInfo API of a summoned creature so it can no longer be accessed
         void UnregisterSummon(SummonInfo* summon);
+
+        // Returns the currently active summon that is the summoner's specified summon slot
+        SummonInfo* GetSummonInSlot(SummonPropertiesSlot slot) const;
+        // Returns a vector with all currently active summons with the specified creature Id
+        std::vector<SummonInfo*> GetSummonsByCreatureId(uint32 creatureId);
+        // Returns a vector with all currently active summons which have been created by the specified spell Id
+        std::vector<SummonInfo*> GetSummonsBySpellId(uint32 spellId);
 
         ShapeshiftForm GetShapeshiftForm() const { return ShapeshiftForm(GetByteValue(UNIT_FIELD_BYTES_2, UNIT_BYTES_2_OFFSET_SHAPESHIFT_FORM)); }
         void SetShapeshiftForm(ShapeshiftForm form);

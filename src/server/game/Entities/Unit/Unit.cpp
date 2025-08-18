@@ -8874,6 +8874,57 @@ void Unit::UnregisterSummon(SummonInfo* summon)
     _slottedSummons[targetSlot] = nullptr;
 }
 
+SummonInfo* Unit::GetSummonInSlot(SummonPropertiesSlot slot) const
+{
+    if (slot == SummonPropertiesSlot::None ||
+        slot == SummonPropertiesSlot::Max ||
+        slot == SummonPropertiesSlot::AnyAvailableTotem)
+        return nullptr;
+
+    return _slottedSummons[AsUnderlyingType(slot)];
+}
+
+std::vector<SummonInfo*> Unit::GetSummonsByCreatureId(uint32 creatureId)
+{
+    if (creatureId == 0)
+        return {};
+
+    std::vector<SummonInfo*> summons;
+
+
+    std::ranges::copy_if(_wildSummons, std::back_inserter(summons), [creatureId](SummonInfo const* summon)
+    {
+        return summon->GetSummonedCreature()->GetEntry() == creatureId;
+    });
+
+    std::ranges::copy_if(_slottedSummons, std::back_inserter(summons), [creatureId](SummonInfo const* summon)
+    {
+        return summon->GetSummonedCreature()->GetEntry() == creatureId;
+    });
+
+    return summons;
+}
+
+std::vector<SummonInfo*> Unit::GetSummonsBySpellId(uint32 spellId)
+{
+    if (spellId == 0)
+        return {};
+
+    std::vector<SummonInfo*> summons;
+
+    std::ranges::copy_if(_wildSummons, std::back_inserter(summons), [spellId](SummonInfo const* summon)
+    {
+        return summon->GetSummonedCreature()->GetUInt32Value(UNIT_CREATED_BY_SPELL) == spellId;
+    });
+
+    std::ranges::copy_if(_slottedSummons, std::back_inserter(summons), [spellId](SummonInfo const* summon)
+    {
+        return summon->GetSummonedCreature()->GetUInt32Value(UNIT_CREATED_BY_SPELL) == spellId;
+    });
+
+    return summons;
+}
+
 void Unit::SetShapeshiftForm(ShapeshiftForm form)
 {
     SetByteValue(UNIT_FIELD_BYTES_2, UNIT_BYTES_2_OFFSET_SHAPESHIFT_FORM, form);
