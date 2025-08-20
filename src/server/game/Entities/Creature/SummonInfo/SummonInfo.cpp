@@ -103,6 +103,21 @@ Optional<uint8> SummonInfo::GetCreatureLevel() const
     return _creatureLevel;
 }
 
+void SummonInfo::UpdateRemainingDuration(Milliseconds deltaTime)
+{
+    if (!_remainingDuration.has_value() || _remainingDuration <= 0ms)
+        return;
+
+    *_remainingDuration -= deltaTime;
+    if (_remainingDuration <= 0ms)
+    {
+        if (DespawnsWhenExpired())
+            GetSummonedCreature()->DespawnOrUnsummon();
+        else
+            GetSummonedCreature()->KillSelf();
+    }
+}
+
 bool SummonInfo::DespawnsOnSummonerLogout() const
 {
     return _flags.HasFlag(SummonPropertiesFlags::DespawnOnSummonerLogout);

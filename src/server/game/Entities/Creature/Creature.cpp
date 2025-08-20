@@ -809,6 +809,9 @@ void Creature::Update(uint32 diff)
         {
             Unit::Update(diff);
 
+            if (SummonInfo* summonInfo = GetSummonInfo())
+                summonInfo->UpdateRemainingDuration(Milliseconds(diff));
+
             // creature can be dead after Unit::Update call
             // CORPSE/DEAD state will processed at next tick (in other case death timer will be updated unexpectedly)
             if (!IsAlive())

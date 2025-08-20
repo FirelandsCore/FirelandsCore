@@ -59,6 +59,9 @@ public:
     // Returns the level of the creature that will override the default level calculation. Nullopt when the creature uses its default values.
     Optional<uint8> GetCreatureLevel() const;
 
+    // Updates the remaining duration of a summon and triggers the expiration
+    void UpdateRemainingDuration(Milliseconds deltaTime);
+
     // Returns true when the summon will despawn when the summoner logs out. This also includes despawning and teleporting between map instances.
     bool DespawnsOnSummonerLogout() const;
     // Marks the summon to despawn when the summoner logs out. This also includes despawning and teleporting between map instaces.

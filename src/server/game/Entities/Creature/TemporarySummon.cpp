@@ -24,6 +24,7 @@
 #include "ObjectAccessor.h"
 #include "Pet.h"
 #include "Player.h"
+#include "SummonInfo.h"
 
 TempSummon::TempSummon(SummonPropertiesEntry const* properties, Unit* owner, bool isWorldObject) :
 Creature(isWorldObject), m_Properties(properties), m_type(TEMPSUMMON_MANUAL_DESPAWN),
@@ -58,18 +59,8 @@ void TempSummon::Update(uint32 diff)
     {
         case TEMPSUMMON_MANUAL_DESPAWN:
         case TEMPSUMMON_DEAD_DESPAWN:
-            break;
         case TEMPSUMMON_TIMED_DESPAWN:
-        {
-            if (m_timer <= diff)
-            {
-                UnSummon();
-                return;
-            }
-
-            m_timer -= diff;
             break;
-        }
         case TEMPSUMMON_TIMED_DESPAWN_OUT_OF_COMBAT:
         {
             if (!IsInCombat())
@@ -216,6 +207,7 @@ void TempSummon::UpdateObjectVisibilityOnCreate()
 void TempSummon::SetTempSummonType(TempSummonType type)
 {
     m_type = type;
+    GetSummonInfo()->SetDespawnWhenExpired(true); // To maintain legacy behavior in which all summons just despawn when expired
 }
 
 void TempSummon::UnSummon(uint32 msTime)
