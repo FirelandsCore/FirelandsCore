@@ -95,16 +95,6 @@ void Totem::UnSummon(uint32 msTime)
     CombatStop();
     RemoveAurasDueToSpell(GetSpell(), GetGUID());
 
-    // clear owner's totem slot
-    for (uint8 i = SUMMON_SLOT_TOTEM_FIRE; i < MAX_TOTEM_SLOT; ++i)
-    {
-        if (GetOwner()->m_SummonSlot[i] == GetGUID())
-        {
-            GetOwner()->m_SummonSlot[i].Clear();
-            break;
-        }
-    }
-
     GetOwner()->RemoveAurasDueToSpell(GetSpell(), GetGUID());
 
     // remove aura all party members too

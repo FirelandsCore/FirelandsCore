@@ -181,12 +181,6 @@ void TempSummon::InitStats(uint32 duration)
 
     if (owner)
     {
-        int32 slot = m_Properties->Slot;
-        if (slot > 0)
-        {
-            owner->m_SummonSlot[slot] = GetGUID();
-        }
-
         if (m_Properties->Control != SUMMON_CATEGORY_WILD)
         {
             // Summons inherit their player summoner's guild data
@@ -200,9 +194,6 @@ void TempSummon::InitStats(uint32 duration)
                 }
             }
         }
-
-        if (owner->IsTotem())
-            owner->m_Controlled.insert(this);
     }
 }
 
@@ -265,15 +256,6 @@ void TempSummon::RemoveFromWorld()
 {
     if (!IsInWorld())
         return;
-
-    if (m_Properties)
-    {
-        int32 slot = m_Properties->Slot;
-        if (slot > 0)
-            if (Unit* owner = GetSummoner())
-                if (owner->m_SummonSlot[slot] == GetGUID())
-                    owner->m_SummonSlot[slot].Clear();
-    }
 
     //if (GetOwnerGUID())
     //    TC_LOG_ERROR("entities.unit", "Unit %u has owner guid when removed from world", GetEntry());

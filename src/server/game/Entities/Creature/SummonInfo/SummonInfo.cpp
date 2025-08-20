@@ -157,7 +157,7 @@ void SummonInfo::SetUseSummonerFaction(bool set)
 
 bool SummonInfo::IsControlledBySummoner() const
 {
-    return _control > SummonPropertiesControl::None;
+    return _control > SummonPropertiesControl::None && _control < SummonPropertiesControl::Vehicle;
 }
 
 SummonPropertiesSlot SummonInfo::GetSummonSlot() const

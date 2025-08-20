@@ -38,14 +38,15 @@
 #include "ObjectAccessor.h"
 #include "ObjectMgr.h"
 #include "OutdoorPvPMgr.h"
-#include "PhasingHandler.h"
 #include "PathGenerator.h"
+#include "PhasingHandler.h"
 #include "Player.h"
 #include "ReputationMgr.h"
 #include "SpellAuraEffects.h"
 #include "SpellDefines.h"
 #include "SpellMgr.h"
 #include "StringConvert.h"
+#include "SummonInfo.h"
 #include "SummonInfoArgs.h"
 #include "TemporarySummon.h"
 #include "Totem.h"
@@ -55,9 +56,9 @@
 #include "UpdateFieldFlags.h"
 #include "UpdateMask.h"
 #include "Util.h"
-#include "Vehicle.h"
 #include "VMapFactory.h"
 #include "VMapManager2.h"
+#include "Vehicle.h"
 #include "WaypointMovementGenerator.h"
 #include "World.h"
 #include "WorldPacket.h"
@@ -2118,6 +2119,7 @@ TempSummon* Map::SummonCreature(uint32 entry, Position const& pos, SummonCreatur
     }
 
     summon->SetHomePosition(pos);
+    summon->HandlePreSummonActions();
     summon->InitStats(summonArgs.SummonDuration);
     summon->SetPrivateObjectOwner(summonArgs.PrivateObjectOwner);
 

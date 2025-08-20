@@ -43,11 +43,11 @@ public:
 
     // Initializes additional settings based on the provided SummonProperties ID.
     void InitializeSummonProperties(uint32 summonPropertiesId, Unit const* summoner);
-    // Returns the creature that is tied to this SummonInfo instance.
+    // Returns the creature that is tied to this SummonInfo instance. This pointer can never be null.
     Creature* GetSummonedCreature() const;
-    // Returns the Unit summoner, or nullptr if no summoner has been provided or if the summoner is not an Unit.
+    // Returns the Unit summoner that has summoned the creature, or nullptr if no summoner has been provided or if the summoner is not an Unit.
     Unit* GetUnitSummoner() const;
-    // Returns the GameObject summoner, or nullptr if no summoner has been provided or if the summoner is not a GameObject.
+    // Returns the GameObject summoner that has summoned the creature, or nullptr if no summoner has been provided or if the summoner is not a GameObject.
     GameObject* GetGameObjectSummoner() const;
 
     // Returns the remaining time until the summon expires. Nullopt when no duration was set which implies that the summon is permanent.

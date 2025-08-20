@@ -323,8 +323,6 @@ void Creature::AddToWorld()
             // If the creature has been summoned, register it for the summoner
             if (Unit* summoner = summonInfo->GetUnitSummoner())
                 summoner->RegisterSummon(summonInfo);
-
-            HandlePostSummonActions();
         }
 
         if (GetZoneScript())
@@ -2813,7 +2811,7 @@ bool Creature::IsSummon() const
     return _summonInfo != nullptr;
 }
 
-void Creature::HandlePostSummonActions()
+void Creature::HandlePreSummonActions()
 {
     SummonInfo* summonInfo = ASSERT_NOTNULL(GetSummonInfo());
 

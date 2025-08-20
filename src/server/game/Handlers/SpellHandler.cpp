@@ -429,7 +429,7 @@ void WorldSession::HandleTotemDestroyed(WorldPackets::Totem::TotemDestroyed& pac
         return;
 
     SummonInfo* summonInfo = _player->GetSummonInSlot(slot);
-    if (!summonInfo)
+    if (!summonInfo || summonInfo->GetSummonedCreature()->GetGUID() != packet.TotemGUID)
         return;
 
     summonInfo->GetSummonedCreature()->DespawnOrUnsummon();

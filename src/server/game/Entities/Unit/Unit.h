@@ -1337,6 +1337,8 @@ class TC_GAME_API Unit : public WorldObject
         void RegisterSummon(SummonInfo* summon);
         // Unregisters the SummonInfo API of a summoned creature so it can no longer be accessed
         void UnregisterSummon(SummonInfo* summon);
+        // Despawns all summons that should despawn when the summoner logs out or despawns
+        void DespawnSummonsOnSummonerLogout();
 
         // Returns the currently active summon that is the summoner's specified summon slot
         SummonInfo* GetSummonInSlot(SummonPropertiesSlot slot) const;

@@ -6117,10 +6117,10 @@ void Unit::RemoveAllControlled()
         m_Controlled.erase(m_Controlled.begin());
         if (target->GetCharmerGUID() == GetGUID())
             target->RemoveCharmAuras();
-        else if (target->GetOwnerOrCreatorGUID() == GetGUID() && target->IsSummon())
+        else if (target->GetOwnerGUID() == GetGUID() && target->IsSummon())
             target->ToTempSummon()->UnSummon();
-        else
-            TC_LOG_ERROR("entities.unit", "Unit %u is trying to release unit %u which is neither charmed nor owned by it", GetEntry(), target->GetEntry());
+        //else
+        //    TC_LOG_ERROR("entities.unit", "Unit %u is trying to release unit %u which is neither charmed nor owned by it", GetEntry(), target->GetEntry());
     }
     if (GetPetGUID())
         TC_LOG_FATAL("entities.unit", "Unit %u is not able to release its pet %s", GetEntry(), GetPetGUID().ToString().c_str());
@@ -8874,6 +8874,21 @@ void Unit::UnregisterSummon(SummonInfo* summon)
     _slottedSummons[targetSlot] = nullptr;
 }
 
+void Unit::DespawnSummonsOnSummonerLogout()
+{
+    // Summons which are stored in a summon slot will always despawn
+    std::vector<SummonInfo*> slottedSummons = _slottedSummons;
+    for (SummonInfo* summon : slottedSummons)
+        if (summon)
+            summon->GetSummonedCreature()->DespawnOrUnsummon();
+
+    // Wild summons on the other hand only despawn when the according flag is set
+    std::vector<SummonInfo*> wildSummons = _wildSummons;
+    for (SummonInfo* summon : wildSummons)
+        if (summon->DespawnsOnSummonerLogout())
+            summon->GetSummonedCreature()->DespawnOrUnsummon();
+}
+
 SummonInfo* Unit::GetSummonInSlot(SummonPropertiesSlot slot) const
 {
     if (slot == SummonPropertiesSlot::None ||
@@ -9690,7 +9705,7 @@ void Unit::RemoveFromWorld()
         RemoveAllDynObjects();
 
         ExitVehicle();  // Remove applied auras with SPELL_AURA_CONTROL_VEHICLE
-        UnsummonAllTotems();
+        DespawnSummonsOnSummonerLogout();
         RemoveAllControlled();
 
         RemoveAreaAurasDueToLeaveWorld();
