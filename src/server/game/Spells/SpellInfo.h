@@ -595,6 +595,7 @@ class TC_GAME_API SpellInfo
 
         float CalculateScaledCoefficient(Unit const* caster, float coefficient) const;
 
+        bool IsShamanTotemSpell() const;
     private:
         // loading helpers
         void _InitializeExplicitTargetMask();

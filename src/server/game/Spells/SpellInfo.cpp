@@ -3416,6 +3416,25 @@ float SpellInfo::CalculateScaledCoefficient(Unit const* caster, float coefficien
 
     return coefficient *= GetSpellScalingMultiplier(caster->getLevel());
 }
+bool SpellInfo::IsShamanTotemSpell() const
+{
+    for (uint8 i = 0; i < MAX_SPELL_TOTEMS; ++i)
+    {
+        TotemCategoryTypes type = static_cast<TotemCategoryTypes>(TotemCategory[i]);
+        switch (type)
+        {
+            case TotemCategoryTypes::EarthTotem:
+            case TotemCategoryTypes::AirTotem:
+            case TotemCategoryTypes::FireTotem:
+            case TotemCategoryTypes::WaterTotem:
+                return true;
+            default:
+                return false;
+        }
+    }
+
+    return false;
+}
 
 float SpellInfo::GetMinRange(bool positive) const
 {

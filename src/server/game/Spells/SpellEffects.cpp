@@ -15,23 +15,22 @@
  * with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "Spell.h"
 #include "AccountMgr.h"
 #include "AreaTrigger.h"
 #include "Battleground.h"
 #include "CellImpl.h"
 #include "CharmInfo.h"
+#include "CombatLogPackets.h"
 #include "Common.h"
 #include "Creature.h"
 #include "CreatureAI.h"
-#include "CombatLogPackets.h"
 #include "DatabaseEnv.h"
 #include "DynamicObject.h"
 #include "Formulas.h"
+#include "GameClient.h"
 #include "GameEventSender.h"
 #include "GameObject.h"
 #include "GameObjectAI.h"
-#include "GameClient.h"
 #include "GossipDef.h"
 #include "GridNotifiers.h"
 #include "Group.h"
@@ -60,10 +59,12 @@
 #include "SharedDefines.h"
 #include "SkillExtraItems.h"
 #include "SocialMgr.h"
+#include "Spell.h"
 #include "SpellAuraEffects.h"
 #include "SpellAuras.h"
 #include "SpellHistory.h"
 #include "SpellMgr.h"
+#include "SummonInfo.h"
 #include "TemporarySummon.h"
 #include "Totem.h"
 #include "Transport.h"
@@ -4754,6 +4755,8 @@ void Spell::EffectResurrectPet(SpellEffIndex /*effIndex*/)
     pet->SavePetToDB(PET_SAVE_CURRENT_STATE);
 }
 
+static constexpr uint32 SPELL_SHAMAN_TOTEMIC_RECALL_ENERGIZE = 39104;
+
 void Spell::EffectDestroyAllTotems(SpellEffIndex /*effIndex*/)
 {
     if (effectHandleMode != SPELL_EFFECT_HANDLE_HIT)
@@ -4762,31 +4765,30 @@ void Spell::EffectDestroyAllTotems(SpellEffIndex /*effIndex*/)
     if (!unitCaster)
         return;
 
-    int32 mana = 0;
-    for (uint8 slot = SUMMON_SLOT_TOTEM_FIRE; slot < MAX_TOTEM_SLOT; ++slot)
+    int32 manaToRefund = 0;
+    for (SummonPropertiesSlot slot : { SummonPropertiesSlot::Totem1, SummonPropertiesSlot::Totem2,
+        SummonPropertiesSlot::Totem3, SummonPropertiesSlot::Totem4})
     {
-        if (!unitCaster->m_SummonSlot[slot])
+        SummonInfo* summonInfo = unitCaster->GetSummonInSlot(slot);
+        if (!summonInfo)
             continue;
 
-        Creature* totem = m_caster->GetMap()->GetCreature(unitCaster->m_SummonSlot[slot]);
-        if (totem && totem->IsTotem())
-        {
-            uint32 spell_id = totem->GetUInt32Value(UNIT_CREATED_BY_SPELL);
-            SpellInfo const* spellInfo = sSpellMgr->GetSpellInfo(spell_id);
-            if (spellInfo)
-            {
-                mana += spellInfo->ManaCost;
-                mana += int32(CalculatePct(unitCaster->GetCreateMana(), spellInfo->ManaCostPercentage));
-            }
-            totem->ToTotem()->UnSummon();
-        }
+        uint32 summonSpellId = summonInfo->GetSummonedCreature()->GetUInt32Value(UNIT_CREATED_BY_SPELL);
+        SpellInfo const* spellInfo = sSpellMgr->GetSpellInfo(summonSpellId);
+        if (!spellInfo->IsShamanTotemSpell())
+            continue;
+
+        manaToRefund += spellInfo->CalcPowerCost(unitCaster, spellInfo->GetSchoolMask());
+
+        summonInfo->GetSummonedCreature()->DespawnOrUnsummon();
     }
-    ApplyPct(mana, damage);
-    if (mana)
+
+    ApplyPct(manaToRefund, damage);
+    if (manaToRefund)
     {
         CastSpellExtraArgs args(TRIGGERED_FULL_MASK);
-        args.AddSpellMod(SPELLVALUE_BASE_POINT0, mana);
-        unitCaster->CastSpell(unitCaster, 39104, args);
+        args.AddSpellMod(SPELLVALUE_BASE_POINT0, manaToRefund);
+        unitCaster->CastSpell(unitCaster, SPELL_SHAMAN_TOTEMIC_RECALL_ENERGIZE, args);
     }
 }
 
