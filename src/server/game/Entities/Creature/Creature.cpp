@@ -336,8 +336,19 @@ void Creature::RemoveFromWorld()
     {
         // If the creature about to despawn, unregister it for the summoner
         if (SummonInfo* summonInfo = GetSummonInfo())
+        {
             if (Unit* summoner = summonInfo->GetUnitSummoner())
+            {
                 summoner->UnregisterSummon(summonInfo);
+
+                if (summonInfo->GetControl() == SummonPropertiesControl::Pet)
+                {
+                    summoner->SetPetGUID(ObjectGuid::Empty);
+                    //if (Player* playerSummoner = summoner->ToPlayer())
+                    //    playerSummoner->SendRemoveControlBar();
+                }
+            }
+        }
 
         if (GetZoneScript())
             GetZoneScript()->OnCreatureRemove(this);
@@ -2812,45 +2823,6 @@ SummonInfo* Creature::GetSummonInfo() const
 bool Creature::IsSummon() const
 {
     return _summonInfo != nullptr;
-}
-
-void Creature::HandlePreSummonActions()
-{
-    SummonInfo* summonInfo = ASSERT_NOTNULL(GetSummonInfo());
-
-    if (Unit* summoner = summonInfo->GetUnitSummoner())
-    {
-        SummonPropertiesSlot slot = summonInfo->GetSummonSlot();
-
-        // Controlled summons always set their creator guid, which is being used to display summoner names in their title
-        if (summonInfo->IsControlledBySummoner())
-            SetCreatorGUID(summoner->GetGUID());
-
-        // Totem slot summons always send the TotemCreated packet. Some non-Shaman classes use this
-        // to display summon icons that can be canceled (Consecration, DK ghouls, Wild Mushrooms)
-        switch (slot)
-        {
-            case SummonPropertiesSlot::Totem1:
-            case SummonPropertiesSlot::Totem2:
-            case SummonPropertiesSlot::Totem3:
-            case SummonPropertiesSlot::Totem4:
-            {
-                if (Player* playerSummoner = Object::ToPlayer(summoner))
-                {
-                    WorldPackets::Totem::TotemCreated totemCreated;
-                    totemCreated.Totem = GetGUID();
-                    totemCreated.SpellID = GetUInt32Value(UNIT_CREATED_BY_SPELL);
-                    totemCreated.Duration = summonInfo->GetRemainingDuration().value_or(0ms).count();
-                    totemCreated.Slot = AsUnderlyingType(summonInfo->GetSummonSlot()) - 1;
-
-                    playerSummoner->SendDirectMessage(totemCreated.Write());
-                }
-                break;
-            }
-            default:
-                break;
-        }
-    }
 }
 
 void Creature::AllLootRemovedFromCorpse()

@@ -2008,74 +2008,7 @@ void WorldObject::AddObjectToRemoveList()
 
 TempSummon* Map::SummonCreature(uint32 entry, Position const& pos, SummonCreatureExtraArgs const& summonArgs /*= { }*/)
 {
-    uint32 mask = UNIT_MASK_SUMMON;
-
-    if (summonArgs.SummonProperties)
-    {
-        switch (summonArgs.SummonProperties->Control)
-        {
-            case SUMMON_CATEGORY_PET:
-                mask = UNIT_MASK_GUARDIAN;
-                break;
-            case SUMMON_CATEGORY_PUPPET:
-                mask = UNIT_MASK_PUPPET;
-                break;
-            case SUMMON_CATEGORY_VEHICLE:
-                mask = UNIT_MASK_MINION;
-                break;
-            case SUMMON_CATEGORY_WILD:
-            case SUMMON_CATEGORY_ALLY:
-            case SUMMON_CATEGORY_UNK:
-            {
-                switch (SummonTitle(summonArgs.SummonProperties->Title))
-                {
-                    case SummonTitle::Minion:
-                    case SummonTitle::Guardian:
-                    case SummonTitle::Runeblade:
-                        mask = UNIT_MASK_GUARDIAN;
-                        break;
-                    case SummonTitle::Totem:
-                    case SummonTitle::Lightwell:
-                        mask = UNIT_MASK_TOTEM;
-                        break;
-                    case SummonTitle::Vehicle:
-                    case SummonTitle::Mount:
-                        mask = UNIT_MASK_SUMMON;
-                        break;
-                    case SummonTitle::Companion:
-                        mask = UNIT_MASK_MINION;
-                        break;
-                    default:
-                        if (summonArgs.SummonProperties->Flags & 512) // Mirror Image, Summon Gargoyle
-                            mask = UNIT_MASK_GUARDIAN;
-                        break;
-                }
-                break;
-            }
-            default:
-                return nullptr;
-        }
-    }
-
-    TempSummon* summon = nullptr;
-    switch (mask)
-    {
-        case UNIT_MASK_SUMMON:
-            summon = new TempSummon(summonArgs.SummonProperties, summonArgs.Summoner, false);
-            break;
-        case UNIT_MASK_GUARDIAN:
-            summon = new Guardian(summonArgs.SummonProperties, summonArgs.Summoner, false);
-            break;
-        case UNIT_MASK_PUPPET:
-            summon = new Puppet(summonArgs.SummonProperties, summonArgs.Summoner);
-            break;
-        case UNIT_MASK_TOTEM:
-            summon = new Totem(summonArgs.SummonProperties, summonArgs.Summoner);
-            break;
-        case UNIT_MASK_MINION:
-            summon = new Minion(summonArgs.SummonProperties, summonArgs.Summoner, false);
-            break;
-    }
+    TempSummon* summon = new TempSummon(summonArgs.SummonProperties, summonArgs.Summoner, false);
 
     // Store special settings which have been extracted from spell effects/scripts
     SummonInfoArgs args;
@@ -2118,8 +2051,10 @@ TempSummon* Map::SummonCreature(uint32 entry, Position const& pos, SummonCreatur
         transport->AddPassenger(summon);
     }
 
+    SummonInfo* summonInfo = ASSERT_NOTNULL(summon->GetSummonInfo());
+
     summon->SetHomePosition(pos);
-    summon->HandlePreSummonActions();
+    summonInfo->HandlePreSummonActions();
     summon->InitStats(summonArgs.SummonDuration);
     summon->SetPrivateObjectOwner(summonArgs.PrivateObjectOwner);
 
@@ -2134,6 +2069,7 @@ TempSummon* Map::SummonCreature(uint32 entry, Position const& pos, SummonCreatur
     }
 
     summon->InitSummon();
+    summonInfo->HandlePostSummonActions();
 
     // call MoveInLineOfSight for nearby creatures
     Trinity::AIRelocationNotifier notifier(*summon);

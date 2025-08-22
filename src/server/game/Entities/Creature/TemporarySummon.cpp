@@ -50,6 +50,7 @@ void TempSummon::Update(uint32 diff)
 {
     Creature::Update(diff);
 
+    /*
     if (m_deathState == DEAD)
     {
         UnSummon();
@@ -147,10 +148,12 @@ void TempSummon::Update(uint32 diff)
             TC_LOG_ERROR("entities.unit", "Temporary summoned creature (entry: %u) have unknown type %u of ", GetEntry(), m_type);
             break;
     }
+    */
 }
 
 void TempSummon::InitStats(uint32 duration)
 {
+    /*
     ASSERT(!IsPet());
 
     m_timer = duration;
@@ -186,10 +189,12 @@ void TempSummon::InitStats(uint32 duration)
             }
         }
     }
+    */
 }
 
 void TempSummon::InitSummon()
 {
+    /*
     if (Unit* owner = GetSummoner())
     {
         if (owner->GetTypeId() == TYPEID_UNIT && owner->ToCreature()->IsAIEnabled())
@@ -197,6 +202,7 @@ void TempSummon::InitSummon()
         if (IsAIEnabled())
             AI()->IsSummonedBy(owner);
     }
+    */
 }
 
 void TempSummon::UpdateObjectVisibilityOnCreate()
@@ -206,8 +212,10 @@ void TempSummon::UpdateObjectVisibilityOnCreate()
 
 void TempSummon::SetTempSummonType(TempSummonType type)
 {
+    /*
     m_type = type;
     GetSummonInfo()->SetDespawnWhenExpired(true); // To maintain legacy behavior in which all summons just despawn when expired
+    */
 }
 
 void TempSummon::UnSummon(uint32 msTime)
@@ -220,6 +228,7 @@ void TempSummon::UnSummon(uint32 msTime)
         return;
     }
 
+    /*
     //ASSERT(!IsPet());
     if (IsPet())
     {
@@ -234,6 +243,7 @@ void TempSummon::UnSummon(uint32 msTime)
         if (owner->GetTypeId() == TYPEID_UNIT && owner->ToCreature()->IsAIEnabled())
             owner->ToCreature()->AI()->SummonedCreatureDespawn(this);
     }
+    */
 
     AddObjectToRemoveList();
 }
@@ -264,6 +274,7 @@ Minion::Minion(SummonPropertiesEntry const* properties, Unit* owner, bool isWorl
 
 void Minion::InitStats(uint32 duration)
 {
+    /*
     TempSummon::InitStats(duration);
     SetReactState(REACT_PASSIVE);
 
@@ -286,6 +297,7 @@ void Minion::InitStats(uint32 duration)
         SetUInt32Value(UNIT_NPC_FLAGS, GetCreatureTemplate()->npcflag);
         SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_IMMUNE_TO_PC | UNIT_FLAG_IMMUNE_TO_NPC);
     }
+    */
 }
 
 void Minion::RemoveFromWorld()
@@ -293,6 +305,7 @@ void Minion::RemoveFromWorld()
     if (!IsInWorld())
         return;
 
+    /*
     Unit* owner = GetOwner();
 
     if ((IsMinion() || IsControlableGuardian()) && !IsTotem() && !IsVehicle())
@@ -309,6 +322,7 @@ void Minion::RemoveFromWorld()
                 if (totemOwner->m_Controlled.find(this) != totemOwner->m_Controlled.end())
                     totemOwner->m_Controlled.erase(this);
     }
+    */
 
     TempSummon::RemoveFromWorld();
 }
@@ -338,15 +352,19 @@ Guardian::Guardian(SummonPropertiesEntry const* properties, Unit* owner, bool is
 {
     memset(m_statFromOwner, 0, sizeof(float)*MAX_STATS);
     m_unitTypeMask |= UNIT_MASK_GUARDIAN;
+
+    /*
     if (properties && SummonTitle(properties->Title) == SummonTitle::Pet)
     {
         m_unitTypeMask |= UNIT_MASK_CONTROLABLE_GUARDIAN;
         InitCharmInfo();
     }
+    */
 }
 
 void Guardian::InitStats(uint32 duration)
 {
+    /*
     Minion::InitStats(duration);
 
     InitStatsForLevel(getLevel());
@@ -355,18 +373,21 @@ void Guardian::InitStats(uint32 duration)
         m_charmInfo->InitCharmCreateSpells();
 
     SetReactState(REACT_AGGRESSIVE);
+    */
 }
 
 void Guardian::InitSummon()
 {
     TempSummon::InitSummon();
 
+    /*
     if (GetOwner()->GetTypeId() == TYPEID_PLAYER
             && GetOwner()->GetMinionGUID() == GetGUID()
             && !GetOwner()->GetCharmedGUID())
     {
         GetOwner()->ToPlayer()->CharmSpellInitialize();
     }
+    */
 }
 
 Puppet::Puppet(SummonPropertiesEntry const* properties, Unit* owner)
@@ -379,19 +400,26 @@ Puppet::Puppet(SummonPropertiesEntry const* properties, Unit* owner)
 void Puppet::InitStats(uint32 duration)
 {
     Minion::InitStats(duration);
+
+    /*
     SetReactState(REACT_PASSIVE);
+    */
 }
 
 void Puppet::InitSummon()
 {
+    /*
     Minion::InitSummon();
     if (!SetCharmedBy(GetOwner(), CHARM_TYPE_POSSESS))
         ABORT();
+    */
 }
 
 void Puppet::Update(uint32 time)
 {
     Minion::Update(time);
+
+    /*
     //check if caster is channelling?
     if (IsInWorld())
     {
@@ -401,6 +429,7 @@ void Puppet::Update(uint32 time)
             /// @todo why long distance .die does not remove it
         }
     }
+    */
 }
 
 void Puppet::RemoveFromWorld()
@@ -408,6 +437,8 @@ void Puppet::RemoveFromWorld()
     if (!IsInWorld())
         return;
 
+    /*
     RemoveCharmedBy(nullptr);
+    */
     Minion::RemoveFromWorld();
 }

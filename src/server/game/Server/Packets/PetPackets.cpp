@@ -16,7 +16,9 @@
 */
 
 #include "PetPackets.h"
+
 #include "PetDefines.h"
+#include "Spell.h"
 
 WorldPacket const* WorldPackets::Pet::PetDismissSound::Write()
 {
@@ -77,6 +79,35 @@ WorldPacket const* WorldPackets::Pet::PetAdded::Write()
     _worldPacket << int32(PetNumber);
     _worldPacket.WriteBits(Name.length(), 8);
     _worldPacket << Name;
+
+    return &_worldPacket;
+}
+
+WorldPacket const* WorldPackets::Pet::PetSpells::Write()
+{
+    _worldPacket << PetGUID;
+    if (PetGUID.IsEmpty())
+        return &_worldPacket;
+
+    _worldPacket << uint16(_CreatureFamily);
+    _worldPacket << uint32(TimeLimit);
+    _worldPacket << uint8(ReactState);
+    _worldPacket << uint8(CommandState);
+    _worldPacket << uint16(Flag);
+
+    _worldPacket.append(ActionButtons.data(), ActionButtons.size());
+
+    _worldPacket << uint8(Actions.size());
+    _worldPacket.append(Actions.data(), Actions.size());
+
+    _worldPacket << uint8(Cooldowns.size());
+    for (PetSpellCooldown const& cooldown : Cooldowns)
+    {
+        _worldPacket << int32(cooldown.SpellID);
+        _worldPacket << uint16(cooldown.Category);
+        _worldPacket << int32(cooldown.Duration);
+        _worldPacket << int32(cooldown.CategoryDuration);
+    }
 
     return &_worldPacket;
 }

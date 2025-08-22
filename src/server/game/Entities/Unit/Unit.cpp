@@ -8863,6 +8863,9 @@ void Unit::UnregisterSummon(SummonInfo* summon)
     if (!summon)
         return;
 
+    // Perform cleanup actions if needed
+    summon->HandlePreUnsummonActions();
+
     SummonPropertiesSlot slot = summon->GetSummonSlot();
     if (slot == SummonPropertiesSlot::None)
     {

@@ -59,6 +59,13 @@ public:
     // Returns the level of the creature that will override the default level calculation. Nullopt when the creature uses its default values.
     Optional<uint8> GetCreatureLevel() const;
 
+    // Handles all summon actions which must be performed before the summoned creature is being added to the world
+    void HandlePreSummonActions();
+    // Handles all summon actions which must be performed after the summoned creature has been added to the world
+    void HandlePostSummonActions();
+    // Handles all summon actions which much be performend before the summoned creature is being removed from the world
+    void HandlePreUnsummonActions();
+
     // Updates the remaining duration of a summon and triggers the expiration
     void UpdateRemainingDuration(Milliseconds deltaTime);
 
@@ -82,6 +89,8 @@ public:
     bool IsControlledBySummoner() const;
     // Returns the summon slot that the summon is going to be stored in
     SummonPropertiesSlot GetSummonSlot() const;
+    // Returns the summon control type which determines how the summon can be controlled by the summoner
+    SummonPropertiesControl GetControl() const;
 
 private:
     Creature* _summonedCreature;

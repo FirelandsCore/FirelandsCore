@@ -16,6 +16,11 @@
  */
 
 #include "Player.h"
+
+#include <G3D/g3dmath.h>
+
+#include <boost/dynamic_bitset.hpp>
+
 #include "AccountMgr.h"
 #include "AchievementMgr.h"
 #include "Archaeology.h"
@@ -36,13 +41,13 @@
 #include "CharmInfo.h"
 #include "Chat.h"
 #include "CinematicMgr.h"
-#include "CombatPackets.h"
 #include "CombatLogPackets.h"
+#include "CombatPackets.h"
 #include "Common.h"
 #include "ConditionMgr.h"
 #include "CreatureAI.h"
-#include "DatabaseEnv.h"
 #include "DB2Stores.h"
+#include "DatabaseEnv.h"
 #include "DisableMgr.h"
 #include "Formulas.h"
 #include "GameClient.h"
@@ -57,13 +62,13 @@
 #include "GroupMgr.h"
 #include "Guild.h"
 #include "GuildMgr.h"
+#include "InstancePackets.h"
 #include "InstanceSaveMgr.h"
 #include "InstanceScript.h"
-#include "InstancePackets.h"
 #include "ItemPackets.h"
 #include "KillRewarder.h"
-#include "Language.h"
 #include "LFGMgr.h"
+#include "Language.h"
 #include "Log.h"
 #include "LootItemStorage.h"
 #include "LootMgr.h"
@@ -72,9 +77,9 @@
 #include "MapManager.h"
 #include "MiscPackets.h"
 #include "MotionMaster.h"
-#include "MovementStructures.h"
-#include "MovementPackets.h"
 #include "MovementPacketSender.h"
+#include "MovementPackets.h"
+#include "MovementStructures.h"
 #include "ObjectAccessor.h"
 #include "ObjectMgr.h"
 #include "Opcodes.h"
@@ -102,6 +107,7 @@
 #include "SpellMgr.h"
 #include "SpellPackets.h"
 #include "StringConvert.h"
+#include "SummonInfo.h"
 #include "TerrainMgr.h"
 #include "TicketMgr.h"
 #include "TradeData.h"
@@ -119,8 +125,6 @@
 #include "WorldSession.h"
 #include "WorldStateMgr.h"
 #include "WorldStatePackets.h"
-#include <boost/dynamic_bitset.hpp>
-#include <G3D/g3dmath.h>
 
 // corpse reclaim times
 static constexpr uint32 DEATH_EXPIRE_STEP = 5 * MINUTE;
@@ -20753,6 +20757,49 @@ void Player::VehicleSpellInitialize()
 
     // Cooldowns
     vehicle->GetSpellHistory()->WritePacket<Pet>(data);
+    SendDirectMessage(&data);
+}
+
+void Player::SendPetSpells(SummonInfo* summonInfo)
+{
+    if (!summonInfo)
+        return;
+
+    Creature* summon = summonInfo->GetSummonedCreature();
+    CharmInfo* charmInfo = summon->GetCharmInfo();
+    if (!charmInfo)
+        return;
+
+    uint8 maxCharmInfoSpells = 0;
+    for (uint32 i = 0; i < MAX_SPELL_CHARM; ++i)
+        if (charmInfo->GetCharmSpell(i)->GetAction())
+            ++maxCharmInfoSpells;
+
+    WorldPacket data(SMSG_PET_SPELLS, 8 + 2 + 4 + 4 + 4 * MAX_UNIT_ACTION_BAR_INDEX + 1 + 4 * maxCharmInfoSpells + 1);
+    data << summon->GetGUID();
+    data << uint16(summon->GetCreatureTemplate()->family);
+    data << uint32(summonInfo->GetRemainingDuration().value_or(0ms).count());
+    data << uint8(summon->GetReactState());
+    data << uint8(charmInfo->GetCommandState());
+    data << uint16(0);
+
+    // action bar loop
+    charmInfo->BuildActionBar(&data);
+
+    data << uint8(maxCharmInfoSpells);
+
+    if (maxCharmInfoSpells)
+    {
+        for (uint32 i = 0; i < MAX_SPELL_CHARM; ++i)
+        {
+            CharmSpellInfo* cspell = charmInfo->GetCharmSpell(i);
+            if (cspell->GetAction())
+                data << uint32(cspell->packedData);
+        }
+    }
+
+    data << uint8(0); // cooldowns count
+
     SendDirectMessage(&data);
 }
 

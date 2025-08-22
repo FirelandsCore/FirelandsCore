@@ -17,12 +17,15 @@
 
 #include "SummonInfo.h"
 
+#include "CharmInfo.h"
 #include "Creature.h"
-#include "DBCStores.h"
 #include "DBCEnums.h"
+#include "DBCStores.h"
 #include "Log.h"
 #include "ObjectAccessor.h"
+#include "Player.h"
 #include "SummonInfoArgs.h"
+#include "TotemPackets.h"
 
 SummonInfo::SummonInfo(Creature* summonedCreature, SummonInfoArgs const& args) :
     _summonedCreature(ASSERT_NOTNULL(summonedCreature)), _summonerGUID(args.Summoner ? args.Summoner->GetGUID() : ObjectGuid::Empty),
@@ -64,6 +67,13 @@ void SummonInfo::InitializeSummonProperties(uint32 summonPropertiesId, Unit cons
             // Controlled summons inherit their summoner's faction if not overridden by DBC data
             if (!_factionId.has_value())
                 _factionId = summoner->GetFaction();
+
+            // The summon is going to be treated as a pet. Prepare spell list.
+            if (_control == SummonPropertiesControl::Pet)
+            {
+                if (CharmInfo* charmInfo = _summonedCreature->InitCharmInfo())
+                    charmInfo->InitCharmCreateSpells();
+            }
         }
     }
 }
@@ -103,6 +113,86 @@ Optional<uint8> SummonInfo::GetCreatureLevel() const
     return _creatureLevel;
 }
 
+void SummonInfo::HandlePreSummonActions()
+{
+    if (Unit* summoner = GetUnitSummoner())
+    {
+        SummonPropertiesSlot slot = GetSummonSlot();
+
+        // Controlled summons always set their creator guid, which is being used to display summoner names in their title
+        if (IsControlledBySummoner())
+            _summonedCreature->SetCreatorGUID(summoner->GetGUID());
+
+        // Pets are set to Assist by default (this does not apply for class pets which save their states)
+        if (_control == SummonPropertiesControl::Pet)
+            _summonedCreature->SetReactState(REACT_ASSIST);
+
+        // Totem slot summons always send the TotemCreated packet. Some non-Shaman classes use this
+        // to display summon icons that can be canceled (Consecration, DK ghouls, Wild Mushrooms)
+        switch (slot)
+        {
+            case SummonPropertiesSlot::Totem1:
+            case SummonPropertiesSlot::Totem2:
+            case SummonPropertiesSlot::Totem3:
+            case SummonPropertiesSlot::Totem4:
+            {
+                if (Player* playerSummoner = Object::ToPlayer(summoner))
+                {
+                    WorldPackets::Totem::TotemCreated totemCreated;
+                    totemCreated.Totem = _summonedCreature->GetGUID();
+                    totemCreated.SpellID = _summonedCreature->GetUInt32Value(UNIT_CREATED_BY_SPELL);
+                    totemCreated.Duration = _remainingDuration.value_or(0ms).count();
+                    totemCreated.Slot = AsUnderlyingType(_summonSlot) - 1;
+
+                    playerSummoner->SendDirectMessage(totemCreated.Write());
+                }
+                break;
+            }
+            default:
+                break;
+        }
+    }
+}
+
+void SummonInfo::HandlePostSummonActions()
+{
+    // Register Pet and enable its control
+    if (_control == SummonPropertiesControl::Pet)
+    {
+        if (Unit* summoner = GetUnitSummoner())
+        {
+            _summonedCreature->SetOwnerGUID(summoner->GetGUID());
+
+            // Only set the Summon GUID when it's empty (prevent multiple applications on multi-summons like Feral Spirit)
+            if (summoner->GetMinionGUID() != _summonedCreature->GetGUID())
+            {
+                summoner->SetMinionGUID(_summonedCreature->GetGUID());
+
+                if (Player* playerSummoner = summoner->ToPlayer())
+                {
+                    _summonedCreature->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_PLAYER_CONTROLLED);
+                    playerSummoner->SendPetSpells(this);
+                }
+            }
+        }
+    }
+}
+
+void SummonInfo::HandlePreUnsummonActions()
+{
+    Unit* summoner = GetUnitSummoner();
+    if (!summoner)
+        return;
+
+    // Clear the current pet action bar and reset the Summon GUID
+    if (_control == SummonPropertiesControl::Pet && summoner->GetMinionGUID() == _summonedCreature->GetGUID())
+    {
+        summoner->SetMinionGUID(ObjectGuid::Empty);
+        if (Player* player = summoner->ToPlayer())
+            player->SendRemoveControlBar();
+    }
+}
+
 void SummonInfo::UpdateRemainingDuration(Milliseconds deltaTime)
 {
     if (!_remainingDuration.has_value() || _remainingDuration <= 0ms)
@@ -112,9 +202,9 @@ void SummonInfo::UpdateRemainingDuration(Milliseconds deltaTime)
     if (_remainingDuration <= 0ms)
     {
         if (DespawnsWhenExpired())
-            GetSummonedCreature()->DespawnOrUnsummon();
+            _summonedCreature->DespawnOrUnsummon();
         else
-            GetSummonedCreature()->KillSelf();
+            _summonedCreature->KillSelf();
     }
 }
 
@@ -178,4 +268,9 @@ bool SummonInfo::IsControlledBySummoner() const
 SummonPropertiesSlot SummonInfo::GetSummonSlot() const
 {
     return _summonSlot;
+}
+
+SummonPropertiesControl SummonInfo::GetControl() const
+{
+    return _control;
 }

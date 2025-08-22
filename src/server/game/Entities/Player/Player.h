@@ -1532,6 +1532,7 @@ class TC_GAME_API Player : public Unit, public GridObject<Player>
         void CharmSpellInitialize();
         void PossessSpellInitialize();
         void VehicleSpellInitialize();
+        void SendPetSpells(SummonInfo* summonInfo);
         void SendRemoveControlBar() const;
         bool HasSpell(uint32 spell) const override;
         bool HasActiveSpell(uint32 spell) const;            // show in spellbook
