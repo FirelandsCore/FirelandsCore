@@ -193,6 +193,11 @@ namespace WorldPackets
         class TrainerBuySpell;
     }
 
+    namespace Pet
+    {
+        class DismissCritter;
+    }
+
     namespace Party
     {
         class SetEveryoneIsAssistant;
@@ -1075,7 +1080,7 @@ class TC_GAME_API WorldSession
         void HandleSetActionBarToggles(WorldPacket& recvData);
 
         void HandleTotemDestroyed(WorldPackets::Totem::TotemDestroyed& packet);
-        void HandleDismissCritter(WorldPacket& recvData);
+        void HandleDismissCritter(WorldPackets::Pet::DismissCritter& packet);
 
         //Battleground
         void HandleBattlemasterHelloOpcode(WorldPacket& recvData);

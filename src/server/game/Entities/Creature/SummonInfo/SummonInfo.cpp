@@ -168,6 +168,7 @@ void SummonInfo::HandlePostSummonActions()
             {
                 summoner->SetMinionGUID(_summonedCreature->GetGUID());
 
+                // Enable player control over the summon
                 if (Player* playerSummoner = summoner->ToPlayer())
                 {
                     _summonedCreature->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_PLAYER_CONTROLLED);

@@ -15,7 +15,6 @@
  * with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "WorldSession.h"
 #include "CharmInfo.h"
 #include "Common.h"
 #include "CreatureAI.h"
@@ -27,37 +26,25 @@
 #include "ObjectMgr.h"
 #include "Opcodes.h"
 #include "Pet.h"
-#include "PetPackets.h"
 #include "PetAI.h"
+#include "PetPackets.h"
 #include "Player.h"
 #include "Spell.h"
 #include "SpellHistory.h"
 #include "SpellInfo.h"
 #include "SpellMgr.h"
+#include "SummonInfo.h"
 #include "Util.h"
 #include "WorldPacket.h"
+#include "WorldSession.h"
 
-void WorldSession::HandleDismissCritter(WorldPacket& recvData)
+void WorldSession::HandleDismissCritter(WorldPackets::Pet::DismissCritter& dismissCritter)
 {
-    ObjectGuid guid;
-    recvData >> guid;
-
-    TC_LOG_DEBUG("network.opcode", "WORLD: Received CMSG_DISMISS_CRITTER for %s", guid.ToString().c_str());
-
-    Unit* pet = ObjectAccessor::GetCreatureOrPetOrVehicle(*_player, guid);
-
-    if (!pet)
-    {
-        TC_LOG_DEBUG("entities.pet", "Vanitypet (%s) does not exist - player '%s' (guid: %u / account: %u) attempted to dismiss it (possibly lagged out)",
-            guid.ToString().c_str(), GetPlayer()->GetName().c_str(), GetPlayer()->GetGUID().GetCounter(), GetAccountId());
+    if (dismissCritter.CritterGUID.IsEmpty() || _player->GetCritterGUID() != dismissCritter.CritterGUID)
         return;
-    }
 
-    if (_player->GetCritterGUID() == pet->GetGUID())
-    {
-         if (pet->GetTypeId() == TYPEID_UNIT && pet->IsSummon())
-             pet->ToTempSummon()->UnSummon();
-    }
+    if (SummonInfo* summonInfo = _player->GetSummonInSlot(SummonPropertiesSlot::Critter))
+        summonInfo->GetSummonedCreature()->DespawnOrUnsummon();
 }
 
 void WorldSession::HandlePetAction(WorldPacket& recvData)

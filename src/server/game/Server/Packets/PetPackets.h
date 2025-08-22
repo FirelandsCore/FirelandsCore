@@ -122,6 +122,16 @@ namespace WorldPackets
             std::vector<uint32> Actions;
             std::vector<PetSpellCooldown> Cooldowns;
         };
+
+        class DismissCritter final : public ClientPacket
+        {
+        public:
+            DismissCritter(WorldPacket&& packet) : ClientPacket(CMSG_DISMISS_CRITTER, std::move(packet)) { }
+
+            void Read() override;
+
+            ObjectGuid CritterGUID;
+        };
     }
 }
 

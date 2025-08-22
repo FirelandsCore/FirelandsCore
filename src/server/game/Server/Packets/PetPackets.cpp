@@ -111,3 +111,8 @@ WorldPacket const* WorldPackets::Pet::PetSpells::Write()
 
     return &_worldPacket;
 }
+
+void WorldPackets::Pet::DismissCritter::Read()
+{
+    _worldPacket >> CritterGUID;
+}
