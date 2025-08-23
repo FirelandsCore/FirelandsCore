@@ -160,9 +160,12 @@ void SummonInfo::HandlePreSummonActions()
 
 void SummonInfo::HandlePostSummonActions()
 {
-    Unit* summoner = GetUnitSummoner();
 
-    if (summoner)
+    // If it's a summon with an expiration timer, mark it as active so its time won't stop ticking if no player is nearby
+    if (_remainingDuration.has_value())
+        _summonedCreature->setActive(true);
+
+    if (Unit* summoner = GetUnitSummoner())
     {
         // Register Pet and enable its control
         if (_control == SummonPropertiesControl::Pet)
@@ -299,18 +302,18 @@ SummonPropertiesControl SummonInfo::GetControl() const
 void SummonInfo::castPassiveSpells()
 {
     CreatureTemplate const* creatureInfo = _summonedCreature->GetCreatureTemplate();
-    if (!creatureInfo)
+    if (!creatureInfo || !creatureInfo->family)
         return;
 
     CreatureFamilyEntry const* creatureFamilyEntry = sCreatureFamilyStore.LookupEntry(creatureInfo->family);
     if (!creatureFamilyEntry)
         return;
 
-    auto const petSpellStore = sPetFamilySpellsStore.find(creatureFamilyEntry->ID);
-    if (petSpellStore == sPetFamilySpellsStore.end())
+    PetFamilySpellsStore::const_iterator itr = sPetFamilySpellsStore.find(creatureFamilyEntry->ID);
+    if (itr == sPetFamilySpellsStore.end())
         return;
 
-    for (uint32 spellId : petSpellStore->second)
+    for (uint32 spellId : itr->second)
     {
         if (SpellInfo const* spellInfo = sSpellMgr->GetSpellInfo(spellId))
         {
