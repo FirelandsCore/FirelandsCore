@@ -337,17 +337,11 @@ void Creature::RemoveFromWorld()
         // If the creature about to despawn, unregister it for the summoner
         if (SummonInfo* summonInfo = GetSummonInfo())
         {
-            if (Unit* summoner = summonInfo->GetUnitSummoner())
-            {
-                summoner->UnregisterSummon(summonInfo);
+            // Perform cleanup actions if needed
+            summonInfo->HandlePreUnsummonActions();
 
-                if (summonInfo->GetControl() == SummonPropertiesControl::Pet)
-                {
-                    summoner->SetPetGUID(ObjectGuid::Empty);
-                    //if (Player* playerSummoner = summoner->ToPlayer())
-                    //    playerSummoner->SendRemoveControlBar();
-                }
-            }
+            if (Unit* summoner = summonInfo->GetUnitSummoner())
+                summoner->UnregisterSummon(summonInfo);
         }
 
         if (GetZoneScript())

@@ -19,6 +19,7 @@
 
 #include "CharmInfo.h"
 #include "Creature.h"
+#include "CreatureAI.h"
 #include "DBCEnums.h"
 #include "DBCStores.h"
 #include "Log.h"
@@ -156,10 +157,12 @@ void SummonInfo::HandlePreSummonActions()
 
 void SummonInfo::HandlePostSummonActions()
 {
-    // Register Pet and enable its control
-    if (_control == SummonPropertiesControl::Pet)
+    Unit* summoner = GetUnitSummoner();
+
+    if (summoner)
     {
-        if (Unit* summoner = GetUnitSummoner())
+        // Register Pet and enable its control
+        if (_control == SummonPropertiesControl::Pet)
         {
             _summonedCreature->SetOwnerGUID(summoner->GetGUID());
 
@@ -176,6 +179,13 @@ void SummonInfo::HandlePostSummonActions()
                 }
             }
         }
+
+        // Infoke JustSummoned and IsSummonedBy AI hooks
+        if (summoner->IsCreature() && summoner->IsAIEnabled())
+            summoner->ToCreature()->AI()->JustSummoned(_summonedCreature);
+
+        if (_summonedCreature->IsAIEnabled())
+            _summonedCreature->AI()->IsSummonedBy(summoner);
     }
 }
 
@@ -192,6 +202,9 @@ void SummonInfo::HandlePreUnsummonActions()
         if (Player* player = summoner->ToPlayer())
             player->SendRemoveControlBar();
     }
+
+    if (summoner->IsCreature() && summoner->IsAIEnabled())
+        summoner->ToCreature()->AI()->SummonedCreatureDespawn(_summonedCreature);
 }
 
 void SummonInfo::UpdateRemainingDuration(Milliseconds deltaTime)
