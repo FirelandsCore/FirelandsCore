@@ -68,13 +68,6 @@ void SummonInfo::InitializeSummonProperties(uint32 summonPropertiesId, Unit cons
             // Controlled summons inherit their summoner's faction if not overridden by DBC data
             if (!_factionId.has_value())
                 _factionId = summoner->GetFaction();
-
-            // The summon is going to be treated as a pet. Prepare spell list.
-            if (_control == SummonPropertiesControl::Pet)
-            {
-                if (CharmInfo* charmInfo = _summonedCreature->InitCharmInfo())
-                    charmInfo->InitCharmCreateSpells();
-            }
         }
     }
 }
@@ -116,6 +109,13 @@ Optional<uint8> SummonInfo::GetCreatureLevel() const
 
 void SummonInfo::HandlePreSummonActions()
 {
+    // The summon is going to be treated as a pet. Prepare spell list.
+    if (_control == SummonPropertiesControl::Pet)
+    {
+        if (CharmInfo* charmInfo = _summonedCreature->InitCharmInfo())
+            charmInfo->InitCharmCreateSpells();
+    }
+
     if (Unit* summoner = GetUnitSummoner())
     {
         SummonPropertiesSlot slot = GetSummonSlot();
