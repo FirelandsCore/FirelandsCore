@@ -25,6 +25,7 @@
 #include "Log.h"
 #include "ObjectAccessor.h"
 #include "Player.h"
+#include "SpellMgr.h"
 #include "SummonInfoArgs.h"
 #include "TotemPackets.h"
 
@@ -130,6 +131,8 @@ void SummonInfo::HandlePreSummonActions()
 
         // Totem slot summons always send the TotemCreated packet. Some non-Shaman classes use this
         // to display summon icons that can be canceled (Consecration, DK ghouls, Wild Mushrooms)
+        // This packet must be sent before the creature is being added to the world so that the client
+        // does send correct GUIDs in CMSG_TOTEM_DESTROYED
         switch (slot)
         {
             case SummonPropertiesSlot::Totem1:
@@ -187,6 +190,10 @@ void SummonInfo::HandlePostSummonActions()
         if (_summonedCreature->IsAIEnabled())
             _summonedCreature->AI()->IsSummonedBy(summoner);
     }
+
+    // Casting passive spells
+    if (IsControlledBySummoner())
+        castPassiveSpells();
 }
 
 void SummonInfo::HandlePreUnsummonActions()
@@ -287,4 +294,32 @@ SummonPropertiesSlot SummonInfo::GetSummonSlot() const
 SummonPropertiesControl SummonInfo::GetControl() const
 {
     return _control;
+}
+
+void SummonInfo::castPassiveSpells()
+{
+    CreatureTemplate const* creatureInfo = _summonedCreature->GetCreatureTemplate();
+    if (!creatureInfo)
+        return;
+
+    CreatureFamilyEntry const* creatureFamilyEntry = sCreatureFamilyStore.LookupEntry(creatureInfo->family);
+    if (!creatureFamilyEntry)
+        return;
+
+    auto const petSpellStore = sPetFamilySpellsStore.find(creatureFamilyEntry->ID);
+    if (petSpellStore == sPetFamilySpellsStore.end())
+        return;
+
+    for (uint32 spellId : petSpellStore->second)
+    {
+        if (SpellInfo const* spellInfo = sSpellMgr->GetSpellInfo(spellId))
+        {
+            if (spellInfo->IsPassive())
+            {
+                _summonedCreature->CastSpell(nullptr, spellId);
+                //if (spellInfo->HasAttribute(SPELL_ATTR4_OWNER_POWER_SCALING))
+                //    _scalingAuras.push_back(spellId);
+            }
+        }
+    }
 }

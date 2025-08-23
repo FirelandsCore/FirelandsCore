@@ -31,6 +31,15 @@ class Unit;
 
 struct SummonInfoArgs;
 
+/*
+The API for summoned creatures. This class contains all the functionality and features to handle summons
+in a safe manner. However, do not store pointers to SummonInfo instances in scripts as they may change during runtime.
+Instead resort to the accessor methods provided in the Unit class which always return intact instances
+and pointers to both ends of a summon relation:
+- Unit::GetSummonInSlot
+- Unit::GetSummonsByCreatureId
+- Unit::GetSummonsBySpellId
+ */
 class TC_GAME_API SummonInfo
 {
 public:
@@ -93,9 +102,12 @@ public:
     SummonPropertiesControl GetControl() const;
 
 private:
+    // Looks up and casts all passive spells of the creature summon. Often used for scaling auras.
+    void castPassiveSpells();
+
     Creature* _summonedCreature;
     ObjectGuid _summonerGUID;
-    Optional<Milliseconds> _remainingDuration;  // NYI
+    Optional<Milliseconds> _remainingDuration;  // Implemented in SummonInfo::UpdateRemainingDuration
     Optional<uint64> _maxHealth;                // Implemented in Creature::UpdateLevelDependantStats
     Optional<uint32> _factionId;                // Implemented in Creature::UpdateEntry
     Optional<uint8> _creatureLevel;             // Implemented in Creature::SelectLevel
