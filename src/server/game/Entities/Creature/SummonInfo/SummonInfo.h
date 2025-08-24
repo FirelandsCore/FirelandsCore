@@ -100,6 +100,8 @@ public:
     SummonPropertiesSlot GetSummonSlot() const;
     // Returns the summon control type which determines how the summon can be controlled by the summoner
     SummonPropertiesControl GetControl() const;
+    // Returns true when the summon is a class pet (Hunter Pet, Warlock Minion or Death Knight Ghoul)
+    bool IsClassPet() const;
 
 private:
     // Looks up and casts all passive spells of the creature summon. Often used for scaling auras.
@@ -116,7 +118,8 @@ private:
     EnumFlag<SummonPropertiesFlags> _flags;
     SummonPropertiesControl _control;
     SummonPropertiesSlot _summonSlot;
-    bool _hasBeenSummonedByCreature;
+    bool _hasBeenSummonedByPlayer;
+    bool _isClassPet;                           // Placeholder for class pet interface
 };
 
 #endif // _SummonInfo_h__

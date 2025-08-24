@@ -116,3 +116,11 @@ void WorldPackets::Pet::DismissCritter::Read()
 {
     _worldPacket >> CritterGUID;
 }
+
+void WorldPackets::Pet::PetAction::Read()
+{
+    _worldPacket >> PetGUID;
+    _worldPacket >> Action;
+    _worldPacket >> TargetGUID;
+    _worldPacket >> ActionPosition;
+}

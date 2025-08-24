@@ -103,6 +103,7 @@ enum ProcFlagsSpellType : uint32;
 enum ZLiquidStatus : uint32;
 enum CharmType : uint8;
 
+enum class SummonPropertiesControl : uint8;
 enum class SummonPropertiesSlot: int8;
 
 namespace Movement
@@ -1341,6 +1342,8 @@ class TC_GAME_API Unit : public WorldObject
         void DespawnSummonsOnSummonerLogout();
         // Despawns all summons that should despawn when the summoner dies
         void DespawnSummonsOnSummonerDeath();
+        // Dismisses the currently active pet summon(s) (class pets and summons which are considered pets)
+        void DismissPet();
 
         // Returns the currently active summon that is the summoner's specified summon slot
         SummonInfo* GetSummonInSlot(SummonPropertiesSlot slot) const;
@@ -1348,6 +1351,8 @@ class TC_GAME_API Unit : public WorldObject
         std::vector<SummonInfo*> GetSummonsByCreatureId(uint32 creatureId);
         // Returns a vector with all currently active summons which have been created by the specified spell Id
         std::vector<SummonInfo*> GetSummonsBySpellId(uint32 spellId);
+        // Returns a vector with all currently active summons which are being controlled in a specific way
+        std::vector<SummonInfo*> GetSummonsByControlType(SummonPropertiesControl control);
 
         ShapeshiftForm GetShapeshiftForm() const { return ShapeshiftForm(GetByteValue(UNIT_FIELD_BYTES_2, UNIT_BYTES_2_OFFSET_SHAPESHIFT_FORM)); }
         void SetShapeshiftForm(ShapeshiftForm form);
@@ -1847,7 +1852,7 @@ class TC_GAME_API Unit : public WorldObject
         /* Player Movement fields END*/
 
         // SummonInfo slot handling
-        std::vector<SummonInfo*> _wildSummons;
+        std::vector<SummonInfo*> _unslottedSummons;
         std::vector<SummonInfo*> _slottedSummons;
 };
 
