@@ -104,6 +104,8 @@ public:
 private:
     // Looks up and casts all passive spells of the creature summon. Often used for scaling auras.
     void castPassiveSpells();
+    // Initializes the react state of the summon
+    void initializeReactState();
 
     Creature* _summonedCreature;
     ObjectGuid _summonerGUID;

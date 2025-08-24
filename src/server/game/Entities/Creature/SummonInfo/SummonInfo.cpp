@@ -126,9 +126,7 @@ void SummonInfo::HandlePreSummonActions()
         if (IsControlledBySummoner())
             _summonedCreature->SetCreatorGUID(summoner->GetGUID());
 
-        // Pets are set to Assist by default (this does not apply for class pets which save their states)
-        if (_control == SummonPropertiesControl::Pet)
-            _summonedCreature->SetReactState(REACT_ASSIST);
+        initializeReactState();
 
         // Totem slot summons always send the TotemCreated packet. Some non-Shaman classes use this
         // to display summon icons that can be canceled (Consecration, DK ghouls, Wild Mushrooms)
@@ -187,6 +185,10 @@ void SummonInfo::HandlePostSummonActions()
             }
         }
 
+        // Set the critter guid if the summoned creature is a companion
+        if (_summonSlot == SummonPropertiesSlot::Critter)
+            summoner->SetCritterGUID(_summonedCreature->GetGUID());
+
         // Infoke JustSummoned and IsSummonedBy AI hooks
         if (summoner->IsCreature() && summoner->IsAIEnabled())
             summoner->ToCreature()->AI()->JustSummoned(_summonedCreature);
@@ -213,6 +215,10 @@ void SummonInfo::HandlePreUnsummonActions()
         if (Player* player = summoner->ToPlayer())
             player->SendRemoveControlBar();
     }
+
+    // Clear the critter guid if the summoned creature was a companion
+    if (_summonSlot == SummonPropertiesSlot::Critter && summoner->GetCritterGUID() == _summonedCreature->GetGUID())
+        summoner->SetCritterGUID(ObjectGuid::Empty);
 
     if (summoner->IsCreature() && summoner->IsAIEnabled())
         summoner->ToCreature()->AI()->SummonedCreatureDespawn(_summonedCreature);
@@ -351,5 +357,31 @@ void SummonInfo::castPassiveSpells()
                 //    _scalingAuras.push_back(spellId);
             }
         }
+    }
+}
+void SummonInfo::initializeReactState()
+{
+    switch (_control)
+    {
+        case SummonPropertiesControl::Guardian:
+            if (_flags.HasFlag(SummonPropertiesFlags::GuardianActsLikePet))
+                _summonedCreature->SetReactState(REACT_ASSIST);
+            else
+                _summonedCreature->SetReactState(REACT_AGGRESSIVE);
+            break;
+        case SummonPropertiesControl::Pet:
+            // Player pets default to assist while creature summons retain their original state
+            if (!_hasBeenSummonedByCreature)
+                _summonedCreature->SetReactState(REACT_ASSIST);
+            else if (CharmInfo* charmInfo = _summonedCreature->GetCharmInfo())
+                charmInfo->RestoreState();
+            break;
+        case SummonPropertiesControl::Possessed:
+            _summonedCreature->SetReactState(REACT_PASSIVE);
+            break;
+        default:
+            if (CharmInfo* charmInfo = _summonedCreature->GetCharmInfo())
+                charmInfo->RestoreState();
+            break;
     }
 }
