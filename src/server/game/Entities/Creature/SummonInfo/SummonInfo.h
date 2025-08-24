@@ -114,6 +114,7 @@ private:
     EnumFlag<SummonPropertiesFlags> _flags;
     SummonPropertiesControl _control;
     SummonPropertiesSlot _summonSlot;
+    bool _hasBeenSummonedByCreature;
 };
 
 #endif // _SummonInfo_h__

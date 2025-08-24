@@ -8606,7 +8606,8 @@ void Unit::setDeathState(DeathState s)
         ExitVehicle();                                      // Exit vehicle before calling RemoveAllControlled
                                                             // vehicles use special type of charm that is not removed by the next function
                                                             // triggering an assert
-        UnsummonAllTotems();
+
+        DespawnSummonsOnSummonerDeath();
         RemoveAllControlled();
         RemoveAllAurasOnDeath();
     }
@@ -8886,6 +8887,19 @@ void Unit::DespawnSummonsOnSummonerLogout()
     std::vector<SummonInfo*> wildSummons = _wildSummons;
     for (SummonInfo* summon : wildSummons)
         if (summon->DespawnsOnSummonerLogout())
+            summon->GetSummonedCreature()->DespawnOrUnsummon();
+}
+
+void Unit::DespawnSummonsOnSummonerDeath()
+{
+    std::vector<SummonInfo*> slottedSummons = _slottedSummons;
+    for (SummonInfo* summon : slottedSummons)
+        if (summon && summon->DespawnsOnSummonerDeath())
+            summon->GetSummonedCreature()->DespawnOrUnsummon();
+
+    std::vector<SummonInfo*> wildSummons = _wildSummons;
+    for (SummonInfo* summon : wildSummons)
+        if (summon->DespawnsOnSummonerDeath())
             summon->GetSummonedCreature()->DespawnOrUnsummon();
 }
 

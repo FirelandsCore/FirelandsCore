@@ -32,7 +32,8 @@
 SummonInfo::SummonInfo(Creature* summonedCreature, SummonInfoArgs const& args) :
     _summonedCreature(ASSERT_NOTNULL(summonedCreature)), _summonerGUID(args.Summoner ? args.Summoner->GetGUID() : ObjectGuid::Empty),
     _remainingDuration(args.Duration), _maxHealth(args.MaxHealth), _creatureLevel(args.CreatureLevel),
-    _flags(SummonPropertiesFlags::None), _control(SummonPropertiesControl::None), _summonSlot(SummonPropertiesSlot::None)
+    _flags(SummonPropertiesFlags::None), _control(SummonPropertiesControl::None), _summonSlot(SummonPropertiesSlot::None),
+    _hasBeenSummonedByCreature(args.Summoner ? args.Summoner->IsCreature() : false)
 {
     if (args.SummonPropertiesId.has_value())
         InitializeSummonProperties(*args.SummonPropertiesId, Object::ToUnit(args.Summoner));
@@ -59,7 +60,7 @@ void SummonInfo::InitializeSummonProperties(uint32 summonPropertiesId, Unit cons
         if (_flags.HasFlag(SummonPropertiesFlags::UseSummonerFaction))
             _factionId = summoner->GetFaction();
 
-        if (_control != SummonPropertiesControl::None)
+        if (IsControlledBySummoner())
         {
             // Controlled summons inherit the level of their summoner unless explicitly stated otherwise.
             // Level can be overridden either by SummonPropertiesFlags::UseCreatureLevel or by a spell effect value
@@ -234,7 +235,20 @@ void SummonInfo::UpdateRemainingDuration(Milliseconds deltaTime)
 
 bool SummonInfo::DespawnsOnSummonerLogout() const
 {
-    return _flags.HasFlag(SummonPropertiesFlags::DespawnOnSummonerLogout);
+    if (_flags.HasFlag(SummonPropertiesFlags::DespawnOnSummonerLogout))
+        return true;
+
+    if (IsControlledBySummoner())
+    {
+        // Controlled creatures summoned by a creature will only despawn when not engaged
+        if (_hasBeenSummonedByCreature)
+            return !_summonedCreature->IsEngaged();
+
+        // Player controlled summons, however, always despawn
+        return true;
+    }
+
+    return false;
 }
 
 void SummonInfo::SetDespawnOnSummonerLogout(bool set)
@@ -247,7 +261,20 @@ void SummonInfo::SetDespawnOnSummonerLogout(bool set)
 
 bool SummonInfo::DespawnsOnSummonerDeath() const
 {
-    return _flags.HasFlag(SummonPropertiesFlags::DespawnOnSummonerDeath);
+    if (_flags.HasFlag(SummonPropertiesFlags::DespawnOnSummonerDeath))
+        return true;
+
+    if (IsControlledBySummoner())
+    {
+        // Controlled creatures summoned by a creature will only despawn when not engaged (they will despawn when reaching home)
+        if (_hasBeenSummonedByCreature)
+            return !_summonedCreature->IsEngaged();
+
+        // Player controlled summons, however, always despawn
+        return true;
+    }
+
+    return false;
 }
 
 void SummonInfo::SetDespawnOnSummonerDeath(bool set)
