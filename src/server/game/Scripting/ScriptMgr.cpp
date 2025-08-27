@@ -1980,6 +1980,16 @@ void ScriptMgr::OnPVPKill(Player* killer, Player* killed)
     FOREACH_SCRIPT(PlayerScript)->OnPVPKill(killer, killed);
 }
 
+void ScriptMgr::OnCreatureUpdate(Creature * creature, uint32 diff)
+{
+    FOREACH_SCRIPT(AllCreatureScript)->OnAllCreatureUpdate(creature, diff);
+}
+
+void ScriptMgr::OnCreatureSelectLevel(const CreatureTemplate * cinfo, Creature * creature)
+{
+    FOREACH_SCRIPT(AllCreatureScript)->OnCreatureSelectLevel(cinfo, creature);
+}
+
 void ScriptMgr::OnCreatureKill(Player* killer, Creature* killed)
 {
 #ifdef ELUNA
@@ -2442,6 +2452,11 @@ void ScriptMgr::ModifySpellDamageTaken(Unit* target, Unit* attacker, int32& dama
     FOREACH_SCRIPT(UnitScript)->ModifySpellDamageTaken(target, attacker, damage);
 }
 
+void ScriptMgr::ModifyHealReceived(Unit* target, Unit* attacker, uint32& heal)
+{
+    FOREACH_SCRIPT(UnitScript)->ModifyHealReceived(target, attacker, heal);
+}
+
 // WorldState
 void ScriptMgr::OnWorldStateValueChange(WorldStateTemplate const* worldStateTemplate, int32 oldValue, int32 newValue, Map const* map)
 {
@@ -2449,6 +2464,18 @@ void ScriptMgr::OnWorldStateValueChange(WorldStateTemplate const* worldStateTemp
 
     GET_SCRIPT(WorldStateScript, worldStateTemplate->ScriptId, tmpscript);
     tmpscript->OnValueChange(worldStateTemplate->Id, oldValue, newValue, map);
+}
+
+AllMapScript::AllMapScript(const char* name)
+    : ScriptObject(name)
+{
+    ScriptRegistry<AllMapScript>::Instance()->AddScript(this);
+}
+
+AllCreatureScript::AllCreatureScript(const char* name)
+    : ScriptObject(name)
+{
+    ScriptRegistry<AllCreatureScript>::Instance()->AddScript(this);
 }
 
 SpellScriptLoader::SpellScriptLoader(char const* name)
@@ -2683,3 +2710,5 @@ template class TC_GAME_API ScriptRegistry<GroupScript>;
 template class TC_GAME_API ScriptRegistry<UnitScript>;
 template class TC_GAME_API ScriptRegistry<AccountScript>;
 template class TC_GAME_API ScriptRegistry<WorldStateScript>;
+template class TC_GAME_API ScriptRegistry<AllMapScript>;
+template class TC_GAME_API ScriptRegistry<AllCreatureScript>;
