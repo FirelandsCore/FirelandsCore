@@ -3125,6 +3125,7 @@ namespace LuaGlobalFunctions
         { "RegisterPlayerEvent", &LuaGlobalFunctions::RegisterPlayerEvent },
         { "RegisterGuildEvent", &LuaGlobalFunctions::RegisterGuildEvent },
         { "RegisterGroupEvent", &LuaGlobalFunctions::RegisterGroupEvent },
+        { "RegisterUnitEvent", &LuaGlobalFunctions::RegisterUnitEvent },
         { "RegisterCreatureEvent", &LuaGlobalFunctions::RegisterCreatureEvent },
         { "RegisterUniqueCreatureEvent", &LuaGlobalFunctions::RegisterUniqueCreatureEvent },
         { "RegisterCreatureGossipEvent", &LuaGlobalFunctions::RegisterCreatureGossipEvent },
@@ -3154,6 +3155,7 @@ namespace LuaGlobalFunctions
         { "ClearServerEvents", &LuaGlobalFunctions::ClearServerEvents },
         { "ClearMapEvents", &LuaGlobalFunctions::ClearMapEvents },
         { "ClearInstanceEvents", &LuaGlobalFunctions::ClearInstanceEvents },
+        { "ClearUnitEvents", &LuaGlobalFunctions::ClearUnitEvents },
 
         // Getters
         { "GetLuaEngine", &LuaGlobalFunctions::GetLuaEngine },
