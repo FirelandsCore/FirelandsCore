@@ -732,6 +732,11 @@ namespace LuaGlobalFunctions
         return RegisterEventHelper(E, Hooks::REGTYPE_PLAYER);
     }
 
+    int RegisterUnitEvent(Eluna* E)
+    {
+        return RegisterEventHelper(E, Hooks::REGTYPE_UNIT);
+    }
+
     /**
      * Registers a [Guild] event handler.
      *
@@ -2962,6 +2967,23 @@ namespace LuaGlobalFunctions
         {
             uint32 event_type = E->CHECKVAL<uint32>(1);
             binding->Clear(Key((Hooks::PlayerEvents)event_type));
+        }
+        return 0;
+    }
+
+    int ClearUnitEvents(Eluna* E)
+    {
+        typedef EventKey<Hooks::UnitEvents> Key;
+        auto binding = E->GetBinding<Key>(Hooks::REGTYPE_UNIT);
+
+        if (lua_isnoneornil(E->L, 1))
+        {
+            binding->Clear();
+        }
+        else
+        {
+            uint32 event_type = E->CHECKVAL<uint32>(1);
+            binding->Clear(Key((Hooks::UnitEvents)event_type));
         }
         return 0;
     }

@@ -21,6 +21,7 @@ namespace Hooks
         REGTYPE_PLAYER,
         REGTYPE_GUILD,
         REGTYPE_GROUP,
+        REGTYPE_UNIT,
         REGTYPE_CREATURE,
         REGTYPE_CREATURE_UNIQUE,
         REGTYPE_VEHICLE,
@@ -323,6 +324,14 @@ namespace Hooks
         INSTANCE_EVENT_COUNT
     };
 
+    enum UnitEvents
+    {
+        UNIT_EVENT_ON_PERIODIC_DAMAGE_AURAS_TICK        = 1,    // (event, target, attacker, damage)
+        UNIT_EVENT_ON_SPELL_DAMAGE_TAKEN                = 2,    // (event, target, attacker, damage)
+        UNIT_EVENT_ON_MELEE_DAMAGE_TAKEN                = 3,    // (event, target, attacker, damage)
+        UNIT_EVENT_ON_HEAL_RECEIVED                     = 4,    // (event, target, attacker, heal)
+        UNIT_EVENT_COUNT
+    };
 };
 
 struct EventEntry

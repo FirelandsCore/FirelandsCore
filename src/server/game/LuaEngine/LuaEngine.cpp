@@ -169,6 +169,7 @@ void Eluna::CreateBindStores()
     CreateBinding<EventKey<Hooks::GroupEvents>>(Hooks::REGTYPE_GROUP);
     CreateBinding<EventKey<Hooks::VehicleEvents>>(Hooks::REGTYPE_VEHICLE);
     CreateBinding<EventKey<Hooks::BGEvents>>(Hooks::REGTYPE_BG);
+    CreateBinding<EventKey<Hooks::UnitEvents>>(Hooks::REGTYPE_UNIT);
 
     CreateBinding<EntryKey<Hooks::PacketEvents>>(Hooks::REGTYPE_PACKET);
     CreateBinding<EntryKey<Hooks::CreatureEvents>>(Hooks::REGTYPE_CREATURE);
@@ -755,6 +756,11 @@ int Eluna::Register(std::underlying_type_t<Hooks::RegisterTypes> regtype, uint32
         case Hooks::REGTYPE_BG:
             if (event_id < Hooks::BG_EVENT_COUNT)
                 return RegisterBasicBinding<Hooks::BGEvents>(this, regtype, event_id, functionRef, shots);
+            break;
+            
+        case Hooks::REGTYPE_UNIT:
+            if (event_id < Hooks::UNIT_EVENT_COUNT)
+                return RegisterBasicBinding<Hooks::UnitEvents>(this, regtype, event_id, functionRef, shots);
             break;
 
         case Hooks::REGTYPE_PACKET:

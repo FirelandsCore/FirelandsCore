@@ -2439,21 +2439,37 @@ void ScriptMgr::OnDamage(Unit* attacker, Unit* victim, uint32& damage)
 
 void ScriptMgr::ModifyPeriodicDamageAurasTick(Unit* target, Unit* attacker, uint32& damage)
 {
+#ifdef ELUNA
+    if (Eluna* e = target->GetEluna())
+        e->OnPeriodicDamageAurasTick(target, attacker, damage);
+#endif
     FOREACH_SCRIPT(UnitScript)->ModifyPeriodicDamageAurasTick(target, attacker, damage);
 }
 
 void ScriptMgr::ModifyMeleeDamage(Unit* target, Unit* attacker, uint32& damage)
 {
+#ifdef ELUNA
+    if (Eluna* e = target->GetEluna())
+        e->OnMeleeDamageTaken(target, attacker, damage);
+#endif
     FOREACH_SCRIPT(UnitScript)->ModifyMeleeDamage(target, attacker, damage);
 }
 
 void ScriptMgr::ModifySpellDamageTaken(Unit* target, Unit* attacker, int32& damage)
 {
+#ifdef ELUNA
+    if (Eluna* e = target->GetEluna())
+        e->OnSpellDamageTaken(target, attacker, damage);
+#endif
     FOREACH_SCRIPT(UnitScript)->ModifySpellDamageTaken(target, attacker, damage);
 }
 
 void ScriptMgr::ModifyHealReceived(Unit* target, Unit* attacker, uint32& heal)
 {
+#ifdef ELUNA
+    if (Eluna* e = target->GetEluna())
+        e->OnHealReceived(target, attacker, heal);
+#endif
     FOREACH_SCRIPT(UnitScript)->ModifyHealReceived(target, attacker, heal);
 }
 

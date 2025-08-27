@@ -568,6 +568,12 @@ public:
 
     /* Spell */
     void OnSpellCast(Spell* pSpell, bool skipCheck);
+
+    /* Unit */
+    void OnPeriodicDamageAurasTick(Unit* target, Unit* attacker, uint32& damage);
+    void OnSpellDamageTaken(Unit* target, Unit* attacker, int32& damage);
+    void OnMeleeDamageTaken(Unit* target, Unit* attacker, uint32& damage);
+    void OnHealReceived(Unit* target, Unit* attacker, uint32& heal);
 };
 template<> Unit* Eluna::CHECKOBJ<Unit>(int narg, bool error);
 template<> Object* Eluna::CHECKOBJ<Object>(int narg, bool error);
