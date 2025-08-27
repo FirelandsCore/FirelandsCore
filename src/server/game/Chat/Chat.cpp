@@ -32,6 +32,10 @@
 #include "Realm.h"
 #include "ScriptMgr.h"
 #include "World.h"
+#ifdef ELUNA
+#include "LuaEngine.h"
+#endif
+
 #include <boost/algorithm/string/replace.hpp>
 
 // Lazy loading of the command table cache from commands and the
@@ -341,6 +345,11 @@ bool ChatHandler::ExecuteCommandInTable(std::vector<ChatCommand> const& table, c
         // some commands have custom error messages. Don't send the default one in these cases.
         else if (!HasSentErrorMessage())
         {
+#ifdef ELUNA
+            if (Eluna* e = sWorld->GetEluna())
+                if (!e->OnCommand(!m_session ? nullptr : m_session->GetPlayer(), std::string(fullcmd).c_str()))
+                    return true;
+#endif
             if (!table[i].Help.empty())
                 SendSysMessage(table[i].Help.c_str());
             else
@@ -351,6 +360,11 @@ bool ChatHandler::ExecuteCommandInTable(std::vector<ChatCommand> const& table, c
         return true;
     }
 
+#ifdef ELUNA
+    if (Eluna* e = sWorld->GetEluna())
+        if (!e->OnCommand(!m_session ? nullptr : m_session->GetPlayer(), std::string(fullcmd).c_str()))
+            return true;
+#endif
     return false;
 }
 

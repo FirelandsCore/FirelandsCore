@@ -35,6 +35,10 @@
 #include "WorldStateDefines.h"
 #include "Transaction.h"
 #include "Weather.h"
+#ifdef ELUNA
+#include "LuaValue.h"
+#endif
+
 #include <bitset>
 #include <list>
 #include <memory>
@@ -57,6 +61,10 @@ class Unit;
 class Weather;
 class WorldObject;
 class WorldPacket;
+#ifdef ELUNA
+class Eluna;
+#endif
+
 struct MapDifficulty;
 struct MapEntry;
 struct Position;
@@ -164,7 +172,7 @@ class TC_GAME_API Map : public GridRefManager<NGridType>
 {
     friend class MapReference;
     public:
-        Map(uint32 id, time_t, uint32 InstanceId, uint8 SpawnMode);
+        Map(uint32 id, time_t, uint32 InstanceId, uint8 SpawnMode, Map* _parent = nullptr);
         virtual ~Map();
 
         MapEntry const* GetEntry() const { return i_mapEntry; }
@@ -590,6 +598,7 @@ class TC_GAME_API Map : public GridRefManager<NGridType>
         GameObject* _FindGameObject(WorldObject* pWorldObject, ObjectGuid::LowType guid) const;
 
         time_t i_gridExpiry;
+        Map* m_parentMap;
 
         std::shared_ptr<TerrainInfo> m_terrain;
         uint16 m_forceEnabledNavMeshFilterFlags;
@@ -667,6 +676,13 @@ class TC_GAME_API Map : public GridRefManager<NGridType>
 
         typedef std::function<void(Map*)> FarSpellCallback;
         void AddFarSpellCallback(FarSpellCallback&& callback);
+        Map const* GetParent() const { return m_parentMap; }
+        bool IsParentMap() const { return GetParent() == this; }
+#ifdef ELUNA
+        Eluna* GetEluna() const { return eluna.get(); }
+
+        LuaVal lua_data = LuaVal({});
+#endif
 
     private:
         // Type specific code for add/remove to/from grid
@@ -757,6 +773,9 @@ class TC_GAME_API Map : public GridRefManager<NGridType>
         std::unordered_set<Object*> _updateObjects;
 
         MPSCQueue<FarSpellCallback> _farSpellCallbacks;
+#ifdef ELUNA
+        std::unique_ptr<Eluna> eluna;
+#endif
 
         /*********************************************************/
         /***                   WorldStates                     ***/

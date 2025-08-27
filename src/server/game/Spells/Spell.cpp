@@ -63,6 +63,9 @@
 #include "World.h"
 #include "WorldPacket.h"
 #include "WorldSession.h"
+#ifdef ELUNA
+#include "LuaEngine.h"
+#endif
 
 extern SpellEffectHandlerFn SpellEffectHandlers[TOTAL_SPELL_EFFECTS];
 
@@ -3592,6 +3595,11 @@ void Spell::_cast(bool skipCheck)
         cancel();
         return;
     }
+
+#ifdef ELUNA
+    if (Eluna* e = m_caster->GetEluna())
+        e->OnSpellCast(this, skipCheck);
+#endif
 
     if (Player* playerCaster = m_caster->ToPlayer())
     {

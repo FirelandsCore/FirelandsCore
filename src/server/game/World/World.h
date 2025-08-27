@@ -41,6 +41,9 @@ class WorldPacket;
 class WorldSession;
 class WorldSocket;
 struct Realm;
+#ifdef ELUNA
+class Eluna;
+#endif
 
 // ServerMessages.dbc
 enum ServerMessageType
@@ -815,6 +818,10 @@ class TC_GAME_API World
         bool IsGuidWarning() { return _guidWarn; }
         bool IsGuidAlert() { return _guidAlert; }
 
+#ifdef ELUNA
+        Eluna* GetEluna() const { return eluna.get(); }
+        std::unique_ptr<Eluna> eluna;
+#endif
     protected:
         void _UpdateGameTime();
 

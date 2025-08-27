@@ -107,6 +107,8 @@ public:
 
     bool CanSee(PhaseShift const& other) const;
 
+    uint32 GetId() const { return Phases.empty() ? DEFAULT_PHASE : Phases.begin()->Id; }
+
 protected:
     friend class PhasingHandler;
 

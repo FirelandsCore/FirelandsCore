@@ -125,6 +125,9 @@
 #include "WorldSession.h"
 #include "WorldStateMgr.h"
 #include "WorldStatePackets.h"
+#ifdef ELUNA
+#include "LuaEngine.h"
+#endif
 
 // corpse reclaim times
 static constexpr uint32 DEATH_EXPIRE_STEP = 5 * MINUTE;
@@ -713,6 +716,11 @@ uint32 Player::EnvironmentalDamage(EnviromentalDamage type, uint32 damage)
         }
 
         UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_DEATHS_FROM, 1, type);
+
+#ifdef ELUNA
+        if (Eluna* e = GetEluna())
+            e->OnPlayerKilledByEnvironment(this, type);
+#endif
     }
 
     return final_damage;
@@ -3130,6 +3138,11 @@ void Player::LearnSpell(uint32 spell_id, bool dependent, uint32 fromSkill /*= 0*
         data << uint32(spell_id);
         data << uint32(0);
         SendDirectMessage(&data);
+
+#ifdef ELUNA
+        if (Eluna* e = GetEluna())
+            e->OnLearnSpell(this, spell_id);
+#endif
     }
 
     // learn all disabled higher ranks and required spells (recursive)
@@ -4167,6 +4180,11 @@ void Player::ResurrectPlayer(float restore_percent, bool applySickness)
 
     // recast lost by death auras of any items held in the inventory
     CastAllObtainSpells();
+
+#ifdef ELUNA
+    if (Eluna* e = GetEluna())
+        e->OnResurrect(this);
+#endif
 
     if (!applySickness)
         return;
@@ -5400,6 +5418,11 @@ bool Player::UpdateSkillPro(uint16 skillId, int32 chance, uint32 step)
     if (Guild* guild = GetGuild())
         guild->UpdateMemberData(this, GUILD_MEMBER_DATA_PROFESSIONS, 0);
 
+#ifdef ELUNA
+    if (Eluna* e = GetEluna())
+        e->OnSkillChange(this, skillId, new_value);
+#endif
+
     TC_LOG_DEBUG("entities.player.skills", "Player::UpdateSkillPro Chance=%3.1f%% taken", chance / 10.0f);
 
     return true;
@@ -6013,6 +6036,10 @@ void Player::SetAreaExplored(uint32 areaId)
 
     if (!(currFields & val))
     {
+#ifdef ELUNA
+        if (Eluna* e = GetEluna())
+            e->OnDiscoverArea(this, GetAreaId());
+#endif
         SetUInt32Value(PLAYER_EXPLORED_ZONES_1 + offset, (uint32)(currFields | val));
 
         UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_EXPLORE_AREA, GetAreaId());
@@ -7025,6 +7052,9 @@ uint32 Player::GetZoneIdFromDB(ObjectGuid guid)
 
 void Player::UpdateArea(uint32 newArea)
 {
+#ifdef ELUNA
+    uint32 oldArea = m_areaUpdateId;
+#endif
     // FFA_PVP flags are area and not zone id dependent
     // so apply them accordingly
     m_areaUpdateId = newArea;
@@ -7060,6 +7090,13 @@ void Player::UpdateArea(uint32 newArea)
         RemoveRestFlag(REST_FLAG_IN_FACTION_AREA);
 
     UpdateMountCapability();
+
+#ifdef ELUNA
+    // We only want the hook to trigger when the old and new area is actually different
+    if (Eluna* e = GetEluna())
+        if(oldArea != newArea)
+            e->OnUpdateArea(this, oldArea, newArea);
+#endif
 }
 
 void Player::UpdateZone(uint32 newZone, uint32 newArea)
@@ -10755,6 +10792,7 @@ InventoryResult Player::CanUseItem(Item* pItem, bool not_loading) const
             return EQUIP_ERR_OK;
         }
     }
+
     return EQUIP_ERR_ITEM_NOT_FOUND;
 }
 
@@ -10794,6 +10832,15 @@ InventoryResult Player::CanUseItem(ItemTemplate const* proto) const
     if (proto->Effects[0].SpellID == 483 || proto->Effects[0].SpellID == 55884)
         if (HasSpell(proto->Effects[1].SpellID))
             return EQUIP_ERR_INTERNAL_BAG_ERROR;
+
+#ifdef ELUNA
+    if (Eluna* e = GetEluna())
+    {
+        InventoryResult eres = e->OnCanUseItem(this, proto->GetId());
+        if (eres != EQUIP_ERR_OK)
+            return eres;
+    }
+#endif
 
     return EQUIP_ERR_OK;
 }
@@ -10915,6 +10962,11 @@ Item* Player::StoreNewItem(ItemPosCountVec const& dest, uint32 item, bool update
             stmt->setString(1, ss.str());
             CharacterDatabase.Execute(stmt);
         }
+
+#ifdef ELUNA
+        if (Eluna* e = GetEluna())
+            e->OnAdd(this, pItem);
+#endif
     }
     return pItem;
 }
@@ -11148,6 +11200,14 @@ Item* Player::EquipItem(uint16 pos, Item* pItem, bool update)
 
         UpdateArmorSpecialization();
 
+#ifdef ELUNA
+        if (Eluna* e = GetEluna())
+        {
+            e->OnEquip(this, pItem2, bag, slot); // This should be removed in the future
+            e->OnItemEquip(this, pItem2, slot);
+        }
+#endif
+
         return pItem2;
     }
 
@@ -11159,6 +11219,14 @@ Item* Player::EquipItem(uint16 pos, Item* pItem, bool update)
     UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_EQUIP_EPIC_ITEM, slot, pItem->GetEntry());
     if (Guild* guild = GetGuild())
         guild->UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_OWN_ITEM, pItem->GetEntry(), 1, 0, nullptr, this);
+
+#ifdef ELUNA
+    if (Eluna* e = GetEluna())
+    {
+        e->OnEquip(this, pItem, bag, slot); // This should be removed in the future
+        e->OnItemEquip(this, pItem, slot);
+    }
+#endif
 
     return pItem;
 }
@@ -11184,6 +11252,14 @@ void Player::QuickEquipItem(uint16 pos, Item* pItem)
 
         UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_EQUIP_ITEM, pItem->GetEntry());
         UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_EQUIP_EPIC_ITEM, slot, pItem->GetEntry());
+
+#ifdef ELUNA
+        if (Eluna* e = GetEluna())
+        {
+            e->OnEquip(this, pItem, (pos >> 8), slot); // This should be removed in the future
+            e->OnItemEquip(this, pItem, slot);
+        }
+#endif
     }
 }
 
@@ -11281,6 +11357,11 @@ void Player::RemoveItem(uint8 bag, uint8 slot, bool update)
                             if (enchantment->GetFlags().HasFlag(SpellItemEnchantmentFlags::MainhandOnly))
                                 pItem->ClearEnchantment(EnchantmentSlot(enchantSlot));
                 }
+
+#ifdef ELUNA
+                if (Eluna* e = GetEluna())
+                    e->OnItemUnEquip(this, pItem, slot);
+#endif
             }
         }
         else if (Bag* pBag = GetBagByPos(bag))
@@ -11396,6 +11477,11 @@ void Player::DestroyItem(uint8 bag, uint8 slot, bool update)
 
                 // equipment visual show
                 SetVisibleItemSlot(slot, nullptr);
+
+#ifdef ELUNA
+                if (Eluna* e = GetEluna())
+                    e->OnItemUnEquip(this, pItem, slot);
+#endif
             }
 
             m_items[slot] = nullptr;
@@ -14058,6 +14144,12 @@ void Player::AddQuestAndCheckCompletion(Quest const* quest, Object* questGiver)
     {
         case TYPEID_UNIT:
             PlayerTalkClass->ClearMenus();
+
+#ifdef ELUNA
+            if (Eluna* e = GetEluna())
+                e->OnQuestAccept(this, questGiver->ToCreature(), quest);
+#endif
+
             questGiver->ToCreature()->AI()->QuestAccept(this, quest);
             break;
         case TYPEID_ITEM:
@@ -14090,6 +14182,12 @@ void Player::AddQuestAndCheckCompletion(Quest const* quest, Object* questGiver)
         }
         case TYPEID_GAMEOBJECT:
             PlayerTalkClass->ClearMenus();
+
+#ifdef ELUNA
+            if (Eluna* e = GetEluna())
+                e->OnQuestAccept(this, questGiver->ToGameObject(), quest);
+#endif
+
             questGiver->ToGameObject()->AI()->QuestAccept(this, quest);
             break;
         default:
@@ -15347,6 +15445,10 @@ QuestGiverStatus Player::GetQuestDialogStatus(Object* questgiver)
     {
         case TYPEID_GAMEOBJECT:
         {
+#ifdef ELUNA
+            if (Eluna* e = GetEluna())
+                e->GetDialogStatus(this, questgiver->ToGameObject());
+#endif
             if (auto questStatus = questgiver->ToGameObject()->AI()->GetDialogStatus(this))
                 return *questStatus;
             qr = sObjectMgr->GetGOQuestRelations(questgiver->GetEntry());
@@ -15355,6 +15457,10 @@ QuestGiverStatus Player::GetQuestDialogStatus(Object* questgiver)
         }
         case TYPEID_UNIT:
         {
+#ifdef ELUNA
+            if (Eluna* e = GetEluna())
+                e->GetDialogStatus(this, questgiver->ToCreature());
+#endif
             if (auto questStatus = questgiver->ToCreature()->AI()->GetDialogStatus(this))
                 return *questStatus;
             qr = sObjectMgr->GetCreatureQuestRelations(questgiver->GetEntry());
@@ -25251,6 +25357,10 @@ void Player::StoreLootItem(ObjectGuid lootWorldObjectGuid, uint8 lootSlot, Loot*
         if (lootWorldObjectGuid.IsItem() && loot->loot_type == LOOT_CORPSE)
             sLootItemStorage->RemoveStoredLootItemForContainer(lootWorldObjectGuid.GetCounter(), item->itemid, item->count, item->itemIndex);
 
+#ifdef ELUNA
+        if (Eluna* e = GetEluna())
+            e->OnLootItem(this, newitem, item->count, this->GetLootGUID());
+#endif
     }
     else
         SendEquipError(msg, nullptr, nullptr, item->itemid);
@@ -25717,6 +25827,12 @@ bool Player::LearnTalent(uint32 talentId, uint32 talentRank)
 
     // update free talent points
     SetFreeTalentPoints(freeTalentPoints - (talentRank - curtalent_maxrank + 1));
+
+#ifdef ELUNA
+    if (Eluna* e = GetEluna())
+        e->OnLearnTalents(this, talentId, talentRank, spellid);
+#endif
+
     return true;
 }
 

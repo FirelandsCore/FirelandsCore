@@ -32,6 +32,9 @@
 #include "TradePackets.h"
 #include "World.h"
 #include "WorldPacket.h"
+#ifdef ELUNA
+#include "LuaEngine.h"
+#endif
 
 void WorldSession::SendTradeStatus(WorldPackets::Trade::TradeStatus& info)
 {
@@ -331,6 +334,20 @@ void WorldSession::HandleAcceptTradeOpcode(WorldPackets::Trade::AcceptTrade& acc
             //}
         }
     }
+
+#ifdef ELUNA
+    if (Eluna* e = _player->GetEluna())
+    {
+        if (!e->OnTradeAccept(_player, trader))
+        {
+            info.Status = TRADE_STATUS_TRADE_CANCELED;
+            info.BagResult = EQUIP_ERR_NO_OUTPUT;
+            SendTradeStatus(info);
+            my_trade->SetAccepted(false, true);
+            return;
+        }
+    }
+#endif
 
     if (his_trade->IsAccepted())
     {
@@ -666,6 +683,18 @@ void WorldSession::HandleInitiateTradeOpcode(WorldPackets::Trade::InitiateTrade&
         SendTradeStatus(info);
         return;
     }
+
+#ifdef ELUNA
+    if (Eluna* e = GetPlayer()->GetEluna())
+    {
+        if (!e->OnTradeInit(GetPlayer(), pOther))
+        {
+            info.Status = TRADE_STATUS_BUSY;
+            SendTradeStatus(info);
+            return;
+        }
+    }
+#endif
 
     if (pOther->getLevel() < sWorld->getIntConfig(CONFIG_TRADE_LEVEL_REQ))
     {

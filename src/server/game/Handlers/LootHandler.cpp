@@ -33,6 +33,9 @@
 #include "ObjectAccessor.h"
 #include "Player.h"
 #include "WorldPacket.h"
+#ifdef ELUNA
+#include "LuaEngine.h"
+#endif
 
 void WorldSession::HandleAutostoreLootItemOpcode(WorldPacket& recvData)
 {
@@ -258,6 +261,11 @@ void WorldSession::HandleLootMoneyOpcode(WorldPacket& /*recvData*/)
             packet.SoleLooter = true; // "You loot..."
             SendPacket(packet.Write());
         }
+
+#ifdef ELUNA
+        if (Eluna* e = player->GetEluna())
+            e->OnLootMoney(player, loot->gold);
+#endif
 
         loot->gold = 0;
 
@@ -531,6 +539,11 @@ void WorldSession::HandleLootMasterGiveOpcode(WorldPacket& recvData)
     target->UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_LOOT_ITEM, item.itemid, item.count);
     target->UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_LOOT_TYPE, item.itemid, item.count, loot->loot_type);
     target->UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_LOOT_EPIC_ITEM, item.itemid, item.count);
+
+#ifdef ELUNA
+    if (Eluna* e = target->GetEluna())
+        e->OnLootItem(target, newitem, item.count, lootguid);
+#endif
 
     // mark as looted
     item.count = 0;

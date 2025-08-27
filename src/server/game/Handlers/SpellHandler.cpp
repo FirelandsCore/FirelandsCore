@@ -44,6 +44,9 @@
 #include "World.h"
 #include "WorldPacket.h"
 #include "WorldSession.h"
+#ifdef ELUNA
+#include "LuaEngine.h"
+#endif
 
 void WorldSession::HandleClientCastFlags(WorldPacket& recvPacket, uint8 castFlags, SpellCastTargets& targets)
 {
@@ -257,6 +260,11 @@ void WorldSession::HandleGameobjectReportUse(WorldPacket& recvPacket)
 
     if (GameObject* go = GetPlayer()->GetGameObjectIfCanInteractWith(guid))
     {
+#ifdef ELUNA
+        if (Eluna* e = GetPlayer()->GetEluna())
+            if (e->OnGameObjectUse(_player, go))
+                return;
+#endif
         if (go->AI()->OnReportUse(_player))
             return;
 

@@ -61,6 +61,10 @@
 #include "WhoPackets.h"
 #include "World.h"
 #include "WorldPacket.h"
+#ifdef ELUNA
+#include "LuaEngine.h"
+#endif
+
 #include <zlib.h>
 
 void WorldSession::HandleRepopRequestOpcode(WorldPacket& recvData)
@@ -86,6 +90,11 @@ void WorldSession::HandleRepopRequestOpcode(WorldPacket& recvData)
             GetPlayer()->GetName().c_str(), GetPlayer()->GetGUID().GetCounter());
         GetPlayer()->KillPlayer();
     }
+
+#ifdef ELUNA
+    if (Eluna* e = GetPlayer()->GetEluna())
+        e->OnRepop(GetPlayer());
+#endif
 
     //this is spirit release confirm?
     GetPlayer()->RemovePet(nullptr, PET_SAVE_DISMISS, true);
@@ -161,11 +170,19 @@ void WorldSession::HandleGossipSelectOptionOpcode(WorldPacket& recvData)
     {
         if (unit)
         {
+#ifdef ELUNA
+            if (Eluna* e = GetPlayer()->GetEluna())
+                if (!e->OnGossipSelectCode(_player, unit, _player->PlayerTalkClass->GetGossipOptionSender(gossipListId), _player->PlayerTalkClass->GetGossipOptionAction(gossipListId), code.c_str()))
+#endif
             if (!unit->AI()->GossipSelectCode(_player, menuId, gossipListId, code.c_str()))
                 _player->OnGossipSelect(unit, gossipListId, menuId);
         }
         else
         {
+#ifdef ELUNA
+            if (Eluna* e = GetPlayer()->GetEluna())
+                if (!e->OnGossipSelectCode(_player, go, _player->PlayerTalkClass->GetGossipOptionSender(gossipListId), _player->PlayerTalkClass->GetGossipOptionAction(gossipListId), code.c_str()))
+#endif
             if (!go->AI()->GossipSelectCode(_player, menuId, gossipListId, code.c_str()))
                 _player->OnGossipSelect(go, gossipListId, menuId);
         }
@@ -174,11 +191,19 @@ void WorldSession::HandleGossipSelectOptionOpcode(WorldPacket& recvData)
     {
         if (unit)
         {
+#ifdef ELUNA
+            if (Eluna* e = GetPlayer()->GetEluna())
+                if (!e->OnGossipSelect(_player, unit, _player->PlayerTalkClass->GetGossipOptionSender(gossipListId), _player->PlayerTalkClass->GetGossipOptionAction(gossipListId)))
+#endif
             if (!unit->AI()->GossipSelect(_player, menuId, gossipListId))
                 _player->OnGossipSelect(unit, gossipListId, menuId);
         }
         else
         {
+#ifdef ELUNA
+            if (Eluna* e = GetPlayer()->GetEluna())
+                if (!e->OnGossipSelect(_player, go, _player->PlayerTalkClass->GetGossipOptionSender(gossipListId), _player->PlayerTalkClass->GetGossipOptionAction(gossipListId)))
+#endif
             if (!go->AI()->GossipSelect(_player, menuId, gossipListId))
                 _player->OnGossipSelect(go, gossipListId, menuId);
         }

@@ -62,6 +62,9 @@
 #include "WaypointMovementGenerator.h"
 #include "World.h"
 #include "WorldPacket.h"
+#ifdef ELUNA
+#include "LuaEngine.h"
+#endif
 
 constexpr float VisibilityDistances[AsUnderlyingType(VisibilityDistanceType::Max)] =
 {
@@ -1976,6 +1979,24 @@ void WorldObject::SetMap(Map* map)
     m_currMap = map;
     m_mapId = map->GetId();
     m_InstanceId = map->GetInstanceId();
+#ifdef ELUNA
+    // always reset Map events, then recreate the Map events procesor if Eluna is enabled for the map
+    auto& events = GetElunaEvents(m_mapId);
+    if (events)
+        events.reset();
+
+    if (Eluna* e = map->GetEluna())
+        events = std::make_unique<ElunaEventProcessor>(e, this);
+
+    // create the World events processor
+    if (Eluna* e = sWorld->GetEluna())
+    {
+        auto& events = GetElunaEvents(-1);
+        if (!events)
+            events = std::make_unique<ElunaEventProcessor>(e, this);
+    }
+#endif
+
     if (IsWorldObject())
         m_currMap->AddWorldObject(this);
 }
@@ -3660,6 +3681,16 @@ float WorldObject::GetMapHeight(float x, float y, float z, bool vmap/* = true*/,
 
     return GetMap()->GetHeight(GetPhaseShift(), x, y, z, vmap, distanceToSearch);
 }
+
+#ifdef ELUNA
+Eluna* WorldObject::GetEluna() const
+{
+    if (const Map* map = FindMap())
+        return map->GetEluna();
+
+    return nullptr;
+}
+#endif
 
 template TC_GAME_API void WorldObject::GetGameObjectListWithEntryInGrid(std::list<GameObject*>&, uint32, float) const;
 template TC_GAME_API void WorldObject::GetGameObjectListWithEntryInGrid(std::deque<GameObject*>&, uint32, float) const;

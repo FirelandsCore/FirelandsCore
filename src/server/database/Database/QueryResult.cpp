@@ -75,23 +75,23 @@ static uint32 SizeForType(MYSQL_FIELD* field)
     }
 }
 
-DatabaseFieldTypes MysqlTypeToFieldType(enum_field_types type)
+DatabaseFieldTypes MysqlTypeToFieldType(enum_field_types type, uint32 flags)
 {
     switch (type)
     {
         case MYSQL_TYPE_NULL:
             return DatabaseFieldTypes::Null;
         case MYSQL_TYPE_TINY:
-            return DatabaseFieldTypes::Int8;
+            return (flags & UNSIGNED_FLAG) ? DatabaseFieldTypes::UInt8 : DatabaseFieldTypes::Int8;
         case MYSQL_TYPE_YEAR:
         case MYSQL_TYPE_SHORT:
-            return DatabaseFieldTypes::Int16;
+            return (flags & UNSIGNED_FLAG) ? DatabaseFieldTypes::UInt16 : DatabaseFieldTypes::Int16;
         case MYSQL_TYPE_INT24:
         case MYSQL_TYPE_LONG:
-            return DatabaseFieldTypes::Int32;
+            return (flags & UNSIGNED_FLAG) ? DatabaseFieldTypes::UInt32 : DatabaseFieldTypes::Int32;
         case MYSQL_TYPE_LONGLONG:
         case MYSQL_TYPE_BIT:
-            return DatabaseFieldTypes::Int64;
+            return (flags & UNSIGNED_FLAG) ? DatabaseFieldTypes::UInt64 : DatabaseFieldTypes::Int64;
         case MYSQL_TYPE_FLOAT:
             return DatabaseFieldTypes::Float;
         case MYSQL_TYPE_DOUBLE:
@@ -119,7 +119,7 @@ DatabaseFieldTypes MysqlTypeToFieldType(enum_field_types type)
     return DatabaseFieldTypes::Null;
 }
 
-static char const* FieldTypeToString(enum_field_types type)
+static char const* FieldTypeToString(enum_field_types type, uint32 flags)
 {
     switch (type)
     {
@@ -133,19 +133,19 @@ static char const* FieldTypeToString(enum_field_types type)
         case MYSQL_TYPE_ENUM:        return "ENUM";
         case MYSQL_TYPE_FLOAT:       return "FLOAT";
         case MYSQL_TYPE_GEOMETRY:    return "GEOMETRY";
-        case MYSQL_TYPE_INT24:       return "INT24";
-        case MYSQL_TYPE_LONG:        return "LONG";
-        case MYSQL_TYPE_LONGLONG:    return "LONGLONG";
+        case MYSQL_TYPE_INT24:       return (flags & UNSIGNED_FLAG) ? "UNSIGNED INT24" : "INT24";
+        case MYSQL_TYPE_LONG:        return (flags & UNSIGNED_FLAG) ? "UNSIGNED LONG" : "LONG";
+        case MYSQL_TYPE_LONGLONG:    return (flags & UNSIGNED_FLAG) ? "UNSIGNED LONGLONG" : "LONGLONG";
         case MYSQL_TYPE_LONG_BLOB:   return "LONG_BLOB";
         case MYSQL_TYPE_MEDIUM_BLOB: return "MEDIUM_BLOB";
         case MYSQL_TYPE_NEWDATE:     return "NEWDATE";
         case MYSQL_TYPE_NULL:        return "NULL";
         case MYSQL_TYPE_SET:         return "SET";
-        case MYSQL_TYPE_SHORT:       return "SHORT";
+        case MYSQL_TYPE_SHORT:       return (flags & UNSIGNED_FLAG) ? "UNSIGNED SHORT" : "SHORT";
         case MYSQL_TYPE_STRING:      return "STRING";
         case MYSQL_TYPE_TIME:        return "TIME";
         case MYSQL_TYPE_TIMESTAMP:   return "TIMESTAMP";
-        case MYSQL_TYPE_TINY:        return "TINY";
+        case MYSQL_TYPE_TINY:        return (flags & UNSIGNED_FLAG) ? "UNSIGNED TINY" : "TINY";
         case MYSQL_TYPE_TINY_BLOB:   return "TINY_BLOB";
         case MYSQL_TYPE_VAR_STRING:  return "VAR_STRING";
         case MYSQL_TYPE_YEAR:        return "YEAR";
@@ -159,9 +159,9 @@ void InitializeDatabaseFieldMetadata(QueryResultFieldMetadata* meta, MySQLField 
     meta->TableAlias = field->table;
     meta->Name = field->org_name;
     meta->Alias = field->name;
-    meta->TypeName = FieldTypeToString(field->type);
+    meta->TypeName = FieldTypeToString(field->type, field->flags);
     meta->Index = fieldIndex;
-    meta->Type = MysqlTypeToFieldType(field->type);
+    meta->Type = MysqlTypeToFieldType(field->type, field->flags);
 }
 }
 
@@ -390,6 +390,12 @@ Field const& ResultSet::operator[](std::size_t index) const
 {
     ASSERT(index < _fieldCount);
     return _currentRow[index];
+}
+
+QueryResultFieldMetadata const& ResultSet::GetFieldMetadata(std::size_t index) const
+{
+    ASSERT(index < _fieldCount);
+    return _fieldMetadata[index];
 }
 
 Field* PreparedResultSet::Fetch() const

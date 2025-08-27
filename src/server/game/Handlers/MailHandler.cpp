@@ -34,6 +34,9 @@
 #include "Player.h"
 #include "World.h"
 #include "WorldPacket.h"
+#ifdef ELUNA
+#include "LuaEngine.h"
+#endif
 
 bool WorldSession::CanOpenMailBox(ObjectGuid guid)
 {
@@ -322,6 +325,17 @@ void WorldSession::HandleSendMail(WorldPacket& recvData)
 
         items[i] = item;
     }
+
+#ifdef ELUNA
+    if (Eluna* e = player->GetEluna())
+    {
+        if (!e->OnSendMail(player, receiverGuid))
+        {
+            player->SendMailResult(0, MAIL_SEND, MAIL_ERR_EQUIP_ERROR, EQUIP_ERR_CLIENT_LOCKED_OUT);
+            return;
+        }
+    }
+#endif
 
     player->SendMailResult(0, MAIL_SEND, MAIL_OK);
 

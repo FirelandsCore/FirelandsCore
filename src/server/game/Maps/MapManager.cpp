@@ -29,6 +29,10 @@
 #include "ScriptMgr.h"
 #include "World.h"
 #include "WorldStateMgr.h"
+#ifdef ELUNA
+#include "LuaEngine.h"
+#endif
+
 #include <boost/dynamic_bitset.hpp>
 #include <numeric>
 
@@ -477,6 +481,18 @@ void MapManager::FreeInstanceId(uint32 instanceId)
     // If freed instance id is lower than the next id available for new instances, use the freed one instead
     _nextInstanceId = std::min(instanceId, _nextInstanceId);
     _freeInstanceIds->set(instanceId, true);
+
+#ifdef ELUNA
+    for (MapMapType::iterator itr = i_maps.begin(); itr != i_maps.end(); ++itr)
+    {
+        if (!(*itr).second->Instanceable())
+            continue;
+
+        Map* iMap = (*itr).second->ToInstanceMap();
+        if (iMap && iMap->GetEluna())
+            iMap->GetEluna()->FreeInstanceId(instanceId);
+    }
+#endif
 }
 
 // hack to allow conditions to access what faction owns the map (these worldstates should not be set on these maps)

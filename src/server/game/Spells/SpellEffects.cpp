@@ -74,6 +74,9 @@
 #include "World.h"
 #include "WorldPacket.h"
 #include "WorldSession.h"
+#ifdef ELUNA
+#include "LuaEngine.h"
+#endif
 
 SpellEffectHandlerFn SpellEffectHandlers[TOTAL_SPELL_EFFECTS] =
 {
@@ -482,6 +485,17 @@ void Spell::EffectDummy(SpellEffIndex effIndex)
     // normal DB scripted effect
     TC_LOG_DEBUG("spells", "Spell ScriptStart spellid %u in EffectDummy(%u)", m_spellInfo->Id, effIndex);
     m_caster->GetMap()->ScriptsStart(sSpellScripts, uint32(m_spellInfo->Id | (effIndex << 24)), m_caster, unitTarget);
+#ifdef ELUNA
+    if (Eluna* e = m_caster->GetEluna())
+    {
+        if (gameObjTarget)
+            e->OnDummyEffect(m_caster, m_spellInfo->Id, effIndex, gameObjTarget);
+        else if (unitTarget && unitTarget->GetTypeId() == TYPEID_UNIT)
+            e->OnDummyEffect(m_caster, m_spellInfo->Id, effIndex, unitTarget->ToCreature());
+        else if (itemTarget)
+            e->OnDummyEffect(m_caster, m_spellInfo->Id, effIndex, itemTarget);
+    }
+#endif
 }
 
 void Spell::EffectTriggerSpell(SpellEffIndex effIndex)
@@ -1664,6 +1678,15 @@ void Spell::SendLoot(ObjectGuid guid, LootType loottype)
         }
 
         player->PlayerTalkClass->ClearMenus();
+#ifdef ELUNA
+        if (Eluna* e = player->GetEluna())
+        {
+            if (e->OnGossipHello(player, gameObjTarget))
+                return;
+            if (e->OnGameObjectUse(player, gameObjTarget))
+                return;
+        }
+#endif
         if (gameObjTarget->AI()->GossipHello(player))
             return;
 

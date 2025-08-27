@@ -54,6 +54,11 @@
 #include "World.h"
 #include "WorldStateMgr.h"
 #include "WorldStatePackets.h"
+#ifdef ELUNA
+#include "LuaEngine.h"
+#include "ElunaConfig.h"
+#endif
+
 #include <boost/heap/fibonacci_heap.hpp>
 #include <unordered_set>
 #include <vector>
@@ -132,7 +137,7 @@ void Map::DeleteStateMachine()
     delete si_GridStates[GRID_STATE_REMOVAL];
 }
 
-Map::Map(uint32 id, time_t expiry, uint32 InstanceId, uint8 SpawnMode) :
+Map::Map(uint32 id, time_t expiry, uint32 InstanceId, uint8 SpawnMode, Map* _parent) :
 _creatureToMoveLock(false), _gameObjectsToMoveLock(false), _dynamicObjectsToMoveLock(false),
 i_mapEntry(sMapStore.LookupEntry(id)), i_spawnMode(SpawnMode), i_InstanceId(InstanceId),
 m_unloadTimer(0), m_VisibleDistance(DEFAULT_VISIBILITY_DISTANCE),
@@ -141,6 +146,15 @@ m_activeNonPlayersIter(m_activeNonPlayers.end()), _transportsUpdateIter(_transpo
 i_gridExpiry(expiry), m_terrain(sTerrainMgr.LoadTerrain(id)),  m_forceEnabledNavMeshFilterFlags(0), m_forceDisabledNavMeshFilterFlags(0),
 i_scriptLock(false), _respawnTimes(std::make_unique<RespawnListContainer>()), _respawnCheckTimer(0)
 {
+    m_parentMap = (_parent ? _parent : this);
+#ifdef ELUNA
+    // lua state begins uninitialized
+    eluna = nullptr;
+
+    if (sElunaConfig->IsElunaEnabled() && sElunaConfig->ShouldMapLoadEluna(id))
+        if (!IsParentMap() || (IsParentMap() && !Instanceable()))
+            eluna = std::make_unique<Eluna>(this);
+#endif
     for (uint32 x = 0; x < MAX_NUMBER_OF_GRIDS; ++x)
     {
         for (uint32 y = 0; y < MAX_NUMBER_OF_GRIDS; ++y)
@@ -2364,6 +2378,16 @@ void Map::AddObjectToRemoveList(WorldObject* obj)
 {
     ASSERT(obj->GetMapId() == GetId() && obj->GetInstanceId() == GetInstanceId());
 
+#ifdef ELUNA
+    if (Eluna* e = GetEluna())
+    {
+        if (Creature* creature = obj->ToCreature())
+            e->OnRemove(creature);
+        else if (GameObject* gameobject = obj->ToGameObject())
+            e->OnRemove(gameobject);
+    }
+#endif
+
     obj->SetDestroyedObject(true);
     obj->CleanupsBeforeDelete(false);                            // remove or simplify at least cross referenced links
 
@@ -2803,11 +2827,25 @@ void InstanceMap::CreateInstanceData(bool load)
     if (i_data != nullptr)
         return;
 
-    InstanceTemplate const* mInstance = sObjectMgr->GetInstanceTemplate(GetId());
-    if (mInstance)
+    bool isElunaAI = false;
+
+#ifdef ELUNA
+    if (Eluna* e = GetEluna())
     {
-        i_script_id = mInstance->ScriptId;
-        i_data = sScriptMgr->CreateInstanceData(this);
+        i_data = e->GetInstanceData(this);
+        if (i_data)
+            isElunaAI = true;
+    }
+#endif
+
+    if (!isElunaAI)
+    {
+        InstanceTemplate const* mInstance = sObjectMgr->GetInstanceTemplate(GetId());
+        if (mInstance)
+        {
+            i_script_id = mInstance->ScriptId;
+            i_data = sScriptMgr->CreateInstanceData(this);
+        }
     }
 
     if (!i_data)
@@ -2830,7 +2868,7 @@ void InstanceMap::CreateInstanceData(bool load)
             i_data->SetCompletedEncountersMask(fields[1].GetUInt32());
             if (!data.empty())
             {
-                TC_LOG_DEBUG("maps", "Loading instance data for `%s` with id %u", sObjectMgr->GetScriptName(i_script_id).c_str(), i_InstanceId);
+                TC_LOG_DEBUG("maps", "Loading instance data for `%s` with id %u", isElunaAI ? "ElunaAI" : sObjectMgr->GetScriptName(i_script_id).c_str(), i_InstanceId);
                 i_data->Load(data.c_str());
             }
         }

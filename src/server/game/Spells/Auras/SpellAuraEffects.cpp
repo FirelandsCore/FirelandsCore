@@ -47,6 +47,10 @@
 #include "Vehicle.h"
 #include "Weather.h"
 #include "WorldPacket.h"
+#ifdef ELUNA
+#include "LuaEngine.h"
+#endif
+
 #include <G3D/g3dmath.h>
 #include <numeric>
 
@@ -5701,6 +5705,12 @@ void AuraEffect::HandlePeriodicTriggerSpellAuraTick(Unit* target, Unit* caster) 
     {
         if (Unit* triggerCaster = triggeredSpellInfo->NeedsToBeTriggeredByCaster(m_spellInfo) ? caster : target)
         {
+#ifdef ELUNA
+            Creature* c = target->ToCreature();
+            if (c && caster)
+                if (Eluna* e = caster->GetEluna())
+                    e->OnDummyEffect(triggerCaster, GetId(), SpellEffIndex(GetEffIndex()), c);
+#endif
             triggerCaster->CastSpell(target, triggerSpellId, CastSpellExtraArgsInit {
                 .TriggerFlags = TRIGGERED_FULL_MASK & ~(TRIGGERED_IGNORE_POWER_COST | TRIGGERED_IGNORE_REAGENT_COST),
                 .TriggeringAura = this
