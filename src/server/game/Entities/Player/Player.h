@@ -408,7 +408,7 @@ enum PlayerFlags
     PLAYER_FLAGS_GM                                 = 0x00000008,
     PLAYER_FLAGS_GHOST                              = 0x00000010,
     PLAYER_FLAGS_RESTING                            = 0x00000020,
-    PLAYER_FLAGS_UNK6                               = 0x00000040,
+    PLAYER_FLAGS_VOICE_CHAT                         = 0x00000040,
     PLAYER_FLAGS_UNK7                               = 0x00000080,       // pre-3.0.3 PLAYER_FLAGS_FFA_PVP flag for FFA PVP state
     PLAYER_FLAGS_CONTESTED_PVP                      = 0x00000100,       // Player has been involved in a PvP combat and will be attacked by contested guards
     PLAYER_FLAGS_IN_PVP                             = 0x00000200,
@@ -418,7 +418,7 @@ enum PlayerFlags
     PLAYER_FLAGS_PLAYED_TOO_LONG                    = 0x00002000,       // played too long time
     PLAYER_FLAGS_IS_OUT_OF_BOUNDS                   = 0x00004000,
     PLAYER_FLAGS_DEVELOPER                          = 0x00008000,       // <Dev> prefix for something?
-    PLAYER_FLAGS_UNK16                              = 0x00010000,       // pre-3.0.3 PLAYER_FLAGS_SANCTUARY flag for player entered sanctuary
+    PLAYER_FLAGS_LOW_LEVEL_RAID_ENABLED             = 0x00010000,       // pre-3.0.3 PLAYER_FLAGS_SANCTUARY flag for player entered sanctuary
     PLAYER_FLAGS_TAXI_BENCHMARK                     = 0x00020000,       // taxi benchmark mode (on/off) (2.0.1)
     PLAYER_FLAGS_PVP_TIMER                          = 0x00040000,       // 3.0.2, pvp timer active (after you disable pvp manually)
     PLAYER_FLAGS_UBER                               = 0x00080000,
@@ -432,8 +432,8 @@ enum PlayerFlags
     PLAYER_FLAGS_AUTO_DECLINE_GUILD                 = 0x08000000,       // Automatically declines guild invites
     PLAYER_FLAGS_GUILD_LEVEL_ENABLED                = 0x10000000,       // Lua_GetGuildLevelEnabled() - enables guild leveling related UI
     PLAYER_FLAGS_VOID_UNLOCKED                      = 0x20000000,       // void storage
-    PLAYER_FLAGS_UNK30                              = 0x40000000,
-    PLAYER_FLAGS_UNK31                              = 0x80000000
+    PLAYER_FLAGS_TIMEWALKING                        = 0x40000000,
+    PLAYER_FLAGS_COMMENTATOR_CAMERA                 = 0x80000000
 };
 
 enum PlayerBytesOffsets
