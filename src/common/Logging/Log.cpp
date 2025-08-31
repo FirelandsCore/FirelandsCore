@@ -95,6 +95,17 @@ void Log::CreateAppenderFromConfig(std::string const& appenderName)
         return;
     }
 
+    if (size > 2)
+    {
+        if (Optional<uint8> flagsVal = Trinity::StringTo<uint8>(tokens[2]))
+            flags = AppenderFlags(*flagsVal);
+        else
+        {
+            fprintf(stderr, "Log::CreateAppenderFromConfig: Unknown flags '%s' for appender %s\n", std::string(tokens[2]).c_str(), name.c_str());
+            return;
+        }
+    }
+
     try
     {
         Appender* appender = factoryFunction->second(NextAppenderId(), name, level, flags, tokens);
