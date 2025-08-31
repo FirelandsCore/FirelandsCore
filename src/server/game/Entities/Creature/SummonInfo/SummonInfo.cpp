@@ -33,7 +33,7 @@ SummonInfo::SummonInfo(Creature* summonedCreature, SummonInfoArgs const& args) :
     _summonedCreature(ASSERT_NOTNULL(summonedCreature)), _summonerGUID(args.Summoner ? args.Summoner->GetGUID() : ObjectGuid::Empty),
     _remainingDuration(args.Duration), _maxHealth(args.MaxHealth), _creatureLevel(args.CreatureLevel),
     _flags(SummonPropertiesFlags::None), _control(SummonPropertiesControl::None), _summonSlot(SummonPropertiesSlot::None),
-    _hasBeenSummonedByCreature(args.Summoner ? args.Summoner->IsCreature() : false)
+    _hasBeenSummonedByPlayer(args.Summoner ? args.Summoner->IsPlayer() : false)
 {
     if (args.SummonPropertiesId.has_value())
         InitializeSummonProperties(*args.SummonPropertiesId, Object::ToUnit(args.Summoner));
@@ -247,7 +247,7 @@ bool SummonInfo::DespawnsOnSummonerLogout() const
     if (IsControlledBySummoner())
     {
         // Controlled creatures summoned by a creature will only despawn when not engaged
-        if (_hasBeenSummonedByCreature)
+        if (!_hasBeenSummonedByPlayer)
             return !_summonedCreature->IsEngaged();
 
         // Player controlled summons, however, always despawn
@@ -273,7 +273,7 @@ bool SummonInfo::DespawnsOnSummonerDeath() const
     if (IsControlledBySummoner())
     {
         // Controlled creatures summoned by a creature will only despawn when not engaged (they will despawn when reaching home)
-        if (_hasBeenSummonedByCreature)
+        if (!_hasBeenSummonedByPlayer)
             return !_summonedCreature->IsEngaged();
 
         // Player controlled summons, however, always despawn
@@ -332,6 +332,11 @@ SummonPropertiesControl SummonInfo::GetControl() const
     return _control;
 }
 
+bool SummonInfo::IsClassPet() const
+{
+    return _isClassPet;
+}
+
 void SummonInfo::castPassiveSpells()
 {
     CreatureTemplate const* creatureInfo = _summonedCreature->GetCreatureTemplate();
@@ -371,7 +376,7 @@ void SummonInfo::initializeReactState()
             break;
         case SummonPropertiesControl::Pet:
             // Player pets default to assist while creature summons retain their original state
-            if (!_hasBeenSummonedByCreature)
+            if (_hasBeenSummonedByPlayer)
                 _summonedCreature->SetReactState(REACT_ASSIST);
             else if (CharmInfo* charmInfo = _summonedCreature->GetCharmInfo())
                 charmInfo->RestoreState();

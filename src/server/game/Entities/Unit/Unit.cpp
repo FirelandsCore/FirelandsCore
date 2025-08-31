@@ -8846,10 +8846,10 @@ void Unit::RegisterSummon(SummonInfo* summon)
     // causes them to interact with the summoner in some way (e.g. despawning when the summoner died)
     if (slot == SummonPropertiesSlot::None)
     {
-        if (advstd::ranges::contains(_wildSummons, summon))
+        if (advstd::ranges::contains(_unslottedSummons, summon))
             return;
 
-        _wildSummons.push_back(summon);
+        _unslottedSummons.push_back(summon);
         return;
     }
 
@@ -8870,7 +8870,7 @@ void Unit::UnregisterSummon(SummonInfo* summon)
     SummonPropertiesSlot slot = summon->GetSummonSlot();
     if (slot == SummonPropertiesSlot::None)
     {
-        std::erase(_wildSummons, summon);
+        std::erase(_unslottedSummons, summon);
         return;
     }
 
@@ -8880,30 +8880,38 @@ void Unit::UnregisterSummon(SummonInfo* summon)
 
 void Unit::DespawnSummonsOnSummonerLogout()
 {
-    // Summons which are stored in a summon slot will always despawn
-    std::vector<SummonInfo*> slottedSummons = _slottedSummons;
-    for (SummonInfo* summon : slottedSummons)
-        if (summon)
+    std::vector<SummonInfo*> unslottedSummons = _unslottedSummons;
+    for (SummonInfo* summon : unslottedSummons)
+        if (summon->DespawnsOnSummonerLogout())
             summon->GetSummonedCreature()->DespawnOrUnsummon();
 
-    // Wild summons on the other hand only despawn when the according flag is set
-    std::vector<SummonInfo*> wildSummons = _wildSummons;
-    for (SummonInfo* summon : wildSummons)
-        if (summon->DespawnsOnSummonerLogout())
+    std::vector<SummonInfo*> slottedSummons = _slottedSummons;
+    for (SummonInfo* summon : slottedSummons)
+        if (summon && summon->DespawnsOnSummonerLogout())
             summon->GetSummonedCreature()->DespawnOrUnsummon();
 }
 
 void Unit::DespawnSummonsOnSummonerDeath()
 {
+    std::vector<SummonInfo*> unslottedSummons = _unslottedSummons;
+    for (SummonInfo* summon : unslottedSummons)
+        if (summon->DespawnsOnSummonerDeath())
+            summon->GetSummonedCreature()->DespawnOrUnsummon();
+
     std::vector<SummonInfo*> slottedSummons = _slottedSummons;
     for (SummonInfo* summon : slottedSummons)
         if (summon && summon->DespawnsOnSummonerDeath())
             summon->GetSummonedCreature()->DespawnOrUnsummon();
 
-    std::vector<SummonInfo*> wildSummons = _wildSummons;
-    for (SummonInfo* summon : wildSummons)
-        if (summon->DespawnsOnSummonerDeath())
-            summon->GetSummonedCreature()->DespawnOrUnsummon();
+}
+
+void Unit::DismissPet()
+{
+    if (!GetMinionGUID())
+        return;
+
+    for (SummonInfo* summonInfo : GetSummonsByControlType(SummonPropertiesControl::Pet))
+        summonInfo->GetSummonedCreature()->DespawnOrUnsummon();
 }
 
 SummonInfo* Unit::GetSummonInSlot(SummonPropertiesSlot slot) const
@@ -8924,14 +8932,14 @@ std::vector<SummonInfo*> Unit::GetSummonsByCreatureId(uint32 creatureId)
     std::vector<SummonInfo*> summons;
 
 
-    std::ranges::copy_if(_wildSummons, std::back_inserter(summons), [creatureId](SummonInfo const* summon)
+    std::ranges::copy_if(_unslottedSummons, std::back_inserter(summons), [creatureId](SummonInfo const* summon)
     {
         return summon->GetSummonedCreature()->GetEntry() == creatureId;
     });
 
     std::ranges::copy_if(_slottedSummons, std::back_inserter(summons), [creatureId](SummonInfo const* summon)
     {
-        return summon->GetSummonedCreature()->GetEntry() == creatureId;
+        return summon && summon->GetSummonedCreature()->GetEntry() == creatureId;
     });
 
     return summons;
@@ -8944,14 +8952,31 @@ std::vector<SummonInfo*> Unit::GetSummonsBySpellId(uint32 spellId)
 
     std::vector<SummonInfo*> summons;
 
-    std::ranges::copy_if(_wildSummons, std::back_inserter(summons), [spellId](SummonInfo const* summon)
+    std::ranges::copy_if(_unslottedSummons, std::back_inserter(summons), [spellId](SummonInfo const* summon)
     {
         return summon->GetSummonedCreature()->GetUInt32Value(UNIT_CREATED_BY_SPELL) == spellId;
     });
 
     std::ranges::copy_if(_slottedSummons, std::back_inserter(summons), [spellId](SummonInfo const* summon)
     {
-        return summon->GetSummonedCreature()->GetUInt32Value(UNIT_CREATED_BY_SPELL) == spellId;
+        return summon && summon->GetSummonedCreature()->GetUInt32Value(UNIT_CREATED_BY_SPELL) == spellId;
+    });
+
+    return summons;
+}
+
+std::vector<SummonInfo*> Unit::GetSummonsByControlType(SummonPropertiesControl control)
+{
+    std::vector<SummonInfo*> summons;
+
+    std::ranges::copy_if(_unslottedSummons, std::back_inserter(summons), [control](SummonInfo const* summon)
+    {
+        return summon->GetControl() == control;
+    });
+
+    std::ranges::copy_if(_slottedSummons, std::back_inserter(summons), [control](SummonInfo const* summon)
+    {
+        return summon && summon->GetControl() == control;
     });
 
     return summons;
@@ -9747,7 +9772,7 @@ void Unit::RemoveFromWorld()
         }
 
         // Clear all active summon references. If we are about to switch map instances, we want to make sure that we leave all summons behind so we won't do threadunsafe operations
-        _wildSummons.clear();
+        _unslottedSummons.clear();
         _slottedSummons.clear();
 
         WorldObject::RemoveFromWorld();

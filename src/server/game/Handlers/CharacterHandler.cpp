@@ -269,13 +269,13 @@ void WorldSession::HandleCharEnum(PreparedQueryResult result)
                 charInfo.HairColor = 0;
                 charInfo.FacialHair = 0;
 
-                if (!(charInfo.Flags2 == CHAR_CUSTOMIZE_FLAG_CUSTOMIZE))
+                if (!(charInfo.Flags2 == CHARACTER_FLAG_2_CUSTOMIZE))
                 {
                     CharacterDatabasePreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_UPD_ADD_AT_LOGIN_FLAG);
                     stmt->setUInt16(0, uint16(AT_LOGIN_CUSTOMIZE));
                     stmt->setUInt32(1, charInfo.Guid.GetCounter());
                     CharacterDatabase.Execute(stmt);
-                    charInfo.Flags2 = CHAR_CUSTOMIZE_FLAG_CUSTOMIZE;
+                    charInfo.Flags2 = CHARACTER_FLAG_2_CUSTOMIZE;
                 }
             }
 

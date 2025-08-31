@@ -196,6 +196,7 @@ namespace WorldPackets
     namespace Pet
     {
         class DismissCritter;
+        class PetAction;
     }
 
     namespace Party
@@ -1064,9 +1065,8 @@ class TC_GAME_API WorldSession
         void HandleTutorialReset(WorldPacket& recvData);
 
         //Pet
-        void HandlePetAction(WorldPacket& recvData);
+        void HandlePetAction(WorldPackets::Pet::PetAction& packet);
         void HandlePetStopAttack(WorldPacket& recvData);
-        void HandlePetActionHelper(Unit* pet, ObjectGuid guid1, uint32 spellid, uint16 flag, ObjectGuid guid2, float x, float y, float z);
         void HandlePetNameQuery(WorldPacket& recvData);
         void HandlePetSetAction(WorldPacket& recvData);
         void HandlePetAbandon(WorldPacket& recvData);

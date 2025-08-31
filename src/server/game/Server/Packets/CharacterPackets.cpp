@@ -56,6 +56,12 @@ WorldPackets::Character::EnumCharactersResult::CharacterInfo::CharacterInfo(Fiel
     uint32 playerFlags  = fields[17].GetUInt32();
     uint32 atLoginFlags = fields[18].GetUInt16();
 
+    if (playerFlags & PLAYER_FLAGS_RESTING)
+        Flags |= CHARACTER_FLAG_RESTING;
+
+    if (atLoginFlags & AT_LOGIN_RESET_TALENTS)
+        Flags |= CHARACTER_FLAG_RESET_TALENTS_ON_LOGIN;
+
     if (atLoginFlags & AT_LOGIN_RESURRECT)
         playerFlags &= ~PLAYER_FLAGS_GHOST;
 
@@ -72,11 +78,20 @@ WorldPackets::Character::EnumCharactersResult::CharacterInfo::CharacterInfo(Fiel
         Flags |= CHARACTER_FLAG_DECLINED;
 
     if (atLoginFlags & AT_LOGIN_CUSTOMIZE)
-        Flags2 = CHAR_CUSTOMIZE_FLAG_CUSTOMIZE;
+        Flags2 = CHARACTER_FLAG_2_CUSTOMIZE;
     else if (atLoginFlags & AT_LOGIN_CHANGE_FACTION)
-        Flags2 = CHAR_CUSTOMIZE_FLAG_FACTION;
+        Flags2 = CHARACTER_FLAG_2_FACTION_CHANGE;
     else if (atLoginFlags & AT_LOGIN_CHANGE_RACE)
-        Flags2 = CHAR_CUSTOMIZE_FLAG_RACE;
+        Flags2 = CHARACTER_FLAG_2_RACE_CHANGE;
+
+    if (playerFlags & PLAYER_FLAGS_NO_XP_GAIN)
+        Flags2 |= CHARACTER_FLAG_2_NO_XP_GAIN;
+
+    if (playerFlags & PLAYER_FLAGS_LOW_LEVEL_RAID_ENABLED)
+        Flags2 |= CHARACTER_FLAG_2_LOW_LEVEL_RAID_ENABLED;
+
+    if (playerFlags & PLAYER_FLAGS_AUTO_DECLINE_GUILD)
+        Flags2 |= CHARACTER_FLAG_2_AUTO_DECLINE_GUILD;
 
     FirstLogin = (atLoginFlags & AT_LOGIN_FIRST) != 0;
 
