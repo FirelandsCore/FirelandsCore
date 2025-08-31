@@ -1538,7 +1538,7 @@ void ObjectMgr::LoadCreatureMovementOverrides()
         if (!fields[1].IsNull())
             movement.HoverInitiallyEnabled = fields[1].GetBool();
         if (!fields[2].IsNull())
-            movement.HoverInitiallyEnabled = fields[2].GetBool();
+            movement.GravityInitiallyDisabled = fields[2].GetBool();
         if (!fields[3].IsNull())
             movement.Random = static_cast<CreatureRandomMovementType>(fields[3].GetUInt8());
         if (!fields[4].IsNull())
